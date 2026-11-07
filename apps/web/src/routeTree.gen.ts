@@ -11,8 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as GithubRouteImport } from './routes/github'
 import { Route as HealthzRouteImport } from './routes/healthz'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as NewsIndexRouteImport } from './routes/news/index'
 import { Route as NewsSlugRouteImport } from './routes/news/$slug'
 import { Route as WorkIndexRouteImport } from './routes/work/index'
@@ -28,6 +30,11 @@ const AboutRoute = AboutRouteImport.update({
   path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GithubRoute = GithubRouteImport.update({
   id: '/github',
   path: '/github',
@@ -37,6 +44,11 @@ const HealthzRoute = HealthzRouteImport.update({
   id: '/healthz',
   path: '/healthz',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
 } as any)
 const NewsIndexRoute = NewsIndexRouteImport.update({
   id: '/news/',
@@ -62,10 +74,12 @@ const WorkSlugRoute = WorkSlugRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/admin': typeof AdminRouteWithChildren
   '/github': typeof GithubRoute
   '/healthz': typeof HealthzRoute
   '/news/$slug': typeof NewsSlugRoute
   '/work/$slug': typeof WorkSlugRoute
+  '/admin/': typeof AdminIndexRoute
   '/news/': typeof NewsIndexRoute
   '/work/': typeof WorkIndexRoute
 }
@@ -76,6 +90,7 @@ export interface FileRoutesByTo {
   '/healthz': typeof HealthzRoute
   '/news/$slug': typeof NewsSlugRoute
   '/work/$slug': typeof WorkSlugRoute
+  '/admin': typeof AdminIndexRoute
   '/news': typeof NewsIndexRoute
   '/work': typeof WorkIndexRoute
 }
@@ -83,10 +98,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/admin': typeof AdminRouteWithChildren
   '/github': typeof GithubRoute
   '/healthz': typeof HealthzRoute
   '/news/$slug': typeof NewsSlugRoute
   '/work/$slug': typeof WorkSlugRoute
+  '/admin/': typeof AdminIndexRoute
   '/news/': typeof NewsIndexRoute
   '/work/': typeof WorkIndexRoute
 }
@@ -95,10 +112,12 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/admin'
     | '/github'
     | '/healthz'
     | '/news/$slug'
     | '/work/$slug'
+    | '/admin/'
     | '/news/'
     | '/work/'
   fileRoutesByTo: FileRoutesByTo
@@ -109,16 +128,19 @@ export interface FileRouteTypes {
     | '/healthz'
     | '/news/$slug'
     | '/work/$slug'
+    | '/admin'
     | '/news'
     | '/work'
   id:
     | '__root__'
     | '/'
     | '/about'
+    | '/admin'
     | '/github'
     | '/healthz'
     | '/news/$slug'
     | '/work/$slug'
+    | '/admin/'
     | '/news/'
     | '/work/'
   fileRoutesById: FileRoutesById
@@ -126,6 +148,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  AdminRoute: typeof AdminRouteWithChildren
   GithubRoute: typeof GithubRoute
   HealthzRoute: typeof HealthzRoute
   NewsSlugRoute: typeof NewsSlugRoute
@@ -150,6 +173,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/github': {
       id: '/github'
       path: '/github'
@@ -163,6 +193,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/healthz'
       preLoaderRoute: typeof HealthzRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/news/': {
       id: '/news/'
@@ -195,9 +232,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  AdminRoute: AdminRouteWithChildren,
   GithubRoute: GithubRoute,
   HealthzRoute: HealthzRoute,
   NewsSlugRoute: NewsSlugRoute,

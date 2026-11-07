@@ -7,7 +7,9 @@ export default defineConfig({
   plugins: [
     tanstackStart({
       router: {
-        routeFileIgnorePattern: "\\.test\\.",
+        // `admin-guard` is a plain module beside the admin routes, not a route
+        // file, so the generator must skip it.
+        routeFileIgnorePattern: "\\.test\\.|admin-guard",
       },
     }),
     viteReact(),
