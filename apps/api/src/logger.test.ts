@@ -1,5 +1,18 @@
-import { describe, expect, test } from "bun:test";
-import { redact } from "./logger";
+import { describe, expect, spyOn, test } from "bun:test";
+import { logger, redact } from "./logger";
+
+/** Runs `emit` with stdout captured and returns the lines it wrote. */
+function capture(run: () => void): string[] {
+  const spy = spyOn(process.stdout, "write").mockImplementation(() => true);
+  let lines: string[] = [];
+  try {
+    run();
+  } finally {
+    lines = spy.mock.calls.map((call) => String(call[0]));
+    spy.mockRestore();
+  }
+  return lines;
+}
 
 describe("redact", () => {
   test("replaces secret-bearing keys with [redacted]", () => {
@@ -28,5 +41,30 @@ describe("redact", () => {
     expect(result.outer.clientSecret).toBe("[redacted]");
     expect(result.outer.keep).toBe("y");
     expect(result.list[0]?.token).toBe("[redacted]");
+  });
+
+  test("replaces a cycle with [circular] instead of recursing forever", () => {
+    const node: Record<string, unknown> = { label: "root" };
+    node.self = node;
+    const result = redact(node) as Record<string, unknown>;
+    expect(result.label).toBe("root");
+    expect(result.self).toBe("[circular]");
+  });
+});
+
+describe("logger", () => {
+  test("a self-referential payload produces a log line and does not throw", () => {
+    const node: Record<string, unknown> = { label: "root" };
+    node.self = node;
+    const lines = capture(() => logger.info({ node }, "cyclic payload"));
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain("[circular]");
+    expect(lines[0]).toContain("cyclic payload");
+  });
+
+  test("a BigInt payload falls back to log_serialization_failed", () => {
+    const lines = capture(() => logger.info({ count: 10n }, "bigint payload"));
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain("log_serialization_failed");
   });
 });

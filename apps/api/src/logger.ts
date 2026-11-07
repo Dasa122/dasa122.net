@@ -1,4 +1,5 @@
 const REDACTED = "[redacted]";
+const CIRCULAR = "[circular]";
 
 const SECRET_KEY_PATTERN =
   /secret|token|password|codeverifier|authorization|cookie|apikey|client_secret/i;
@@ -7,11 +8,21 @@ const SECRET_KEY_PATTERN =
  * Deep-copies `value`, replacing the value of every secret-bearing key with
  * `[redacted]`. Applied to every log payload so a token, secret, password or
  * cookie can never reach stdout. Errors are expanded to their own fields
- * because their properties are not enumerable.
+ * because their properties are not enumerable, and cycles become `[circular]`
+ * rather than a stack overflow.
  */
-export function redact(value: unknown): unknown {
+export function redact(
+  value: unknown,
+  seen: WeakSet<object> = new WeakSet(),
+): unknown {
   if (Array.isArray(value)) {
-    return value.map((item) => redact(item));
+    if (seen.has(value)) {
+      return CIRCULAR;
+    }
+    seen.add(value);
+    const result = value.map((item) => redact(item, seen));
+    seen.delete(value);
+    return result;
   }
   if (value instanceof Date) {
     return value;
@@ -20,10 +31,17 @@ export function redact(value: unknown): unknown {
     return { message: value.message, name: value.name, stack: value.stack };
   }
   if (value !== null && typeof value === "object") {
+    if (seen.has(value)) {
+      return CIRCULAR;
+    }
+    seen.add(value);
     const result: Record<string, unknown> = {};
     for (const [key, entry] of Object.entries(value)) {
-      result[key] = SECRET_KEY_PATTERN.test(key) ? REDACTED : redact(entry);
+      result[key] = SECRET_KEY_PATTERN.test(key)
+        ? REDACTED
+        : redact(entry, seen);
     }
+    seen.delete(value);
     return result;
   }
   return value;
@@ -47,14 +65,24 @@ function emit(
   payload: LogPayload,
   message?: string,
 ): void {
-  const fields = redact({ ...bindings, ...payload }) as LogPayload;
-  const line = {
-    ...fields,
-    level,
-    time: new Date().toISOString(),
-    ...(message === undefined ? {} : { msg: message }),
-  };
-  process.stdout.write(`${JSON.stringify(line)}\n`);
+  const time = new Date().toISOString();
+  let line: string;
+  try {
+    const fields = redact({ ...bindings, ...payload }) as LogPayload;
+    line = JSON.stringify({
+      ...fields,
+      level,
+      time,
+      ...(message === undefined ? {} : { msg: message }),
+    });
+  } catch {
+    line = JSON.stringify({
+      level: "error",
+      msg: "log_serialization_failed",
+      time,
+    });
+  }
+  process.stdout.write(`${line}\n`);
 }
 
 function createLogger(bindings: LogPayload = {}): Logger {
