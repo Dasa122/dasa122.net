@@ -20,7 +20,13 @@ import {
 
 const OAUTH_COOKIE_MAX_AGE_SECONDS = 600;
 const OAUTH_COOKIE_PATH = "/api/auth";
-const SESSION_COOKIE_PATH = "/api";
+// The web app reads the session while server-rendering /admin, which is not
+// under /api. A cookie scoped to /api is never sent on that document request,
+// so the guard would always see an anonymous visitor and bounce through
+// Authentik forever. `/` is what the discord-music bot uses.
+const SESSION_COOKIE_PATH = "/";
+/** Path the session cookie used before it was widened; cleared on every write. */
+const LEGACY_SESSION_COOKIE_PATH = "/api";
 const SESSION_SCOPE = "openid profile email groups";
 const SECONDS_PER_DAY = 24 * 60 * 60;
 
@@ -137,6 +143,21 @@ function clearSessionCookie(): string {
     httpOnly: true,
     maxAge: 0,
     path: SESSION_COOKIE_PATH,
+    sameSite: "Lax",
+    secure: secureCookies(),
+  });
+}
+
+/**
+ * Removes the session cookie as it was scoped before the path widened. Without
+ * it a browser that signed in earlier would send two `dasa_session` cookies to
+ * `/api`, and which one wins depends on the parser.
+ */
+function clearLegacySessionCookie(): string {
+  return serializeCookie(SESSION_COOKIE, "", {
+    httpOnly: true,
+    maxAge: 0,
+    path: LEGACY_SESSION_COOKIE_PATH,
     sameSite: "Lax",
     secure: secureCookies(),
   });
@@ -285,6 +306,21 @@ async function handleCallback(request: Request, url: URL): Promise<Response> {
     return json(401, { error: "id_token_invalid" });
   }
 
+  const previousSessionId = parseCookies(request.headers.get("cookie"))[
+    SESSION_COOKIE
+  ];
+  if (previousSessionId !== undefined) {
+    try {
+      await revokeSession(previousSessionId);
+    } catch (error) {
+      // A stale row that cannot be revoked must not block the new sign-in.
+      logger.warn(
+        { err: error, event: "auth_session_revoke_failed" },
+        "previous session revoke failed",
+      );
+    }
+  }
+
   let sessionId: string;
   try {
     const session = await createSession(input);
@@ -299,6 +335,7 @@ async function handleCallback(request: Request, url: URL): Promise<Response> {
 
   return redirect(safeReturnTo(oauth.returnTo), [
     sessionCookie(sessionId),
+    clearLegacySessionCookie(),
     clearOAuthCookie(),
   ]);
 }
@@ -316,7 +353,10 @@ async function handleLogout(request: Request): Promise<Response> {
       return json(503, { error: "session_unavailable" });
     }
   }
-  return redirect(env.publicOrigin, [clearSessionCookie()]);
+  return redirect(env.publicOrigin, [
+    clearSessionCookie(),
+    clearLegacySessionCookie(),
+  ]);
 }
 
 async function handleSession(request: Request): Promise<Response> {
