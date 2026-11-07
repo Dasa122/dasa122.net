@@ -9,6 +9,10 @@ describe("formatDate", () => {
   test("renders null as an empty string", () => {
     expect(formatDate(null)).toBe("");
   });
+
+  test("renders an invalid date as an empty string", () => {
+    expect(formatDate("not-a-date")).toBe("");
+  });
 });
 
 describe("formatRelativeTime", () => {
@@ -36,6 +40,10 @@ describe("formatRelativeTime", () => {
     expect(formatRelativeTime("2026-10-01T12:00:00.000Z", now)).toBe(
       "1 Oct 2026",
     );
+  });
+
+  test("renders an invalid date as an empty string", () => {
+    expect(formatRelativeTime("not-a-date", now)).toBe("");
   });
 });
 

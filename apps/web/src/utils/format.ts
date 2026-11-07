@@ -7,12 +7,16 @@ const dateFormatter = new Intl.DateTimeFormat("en-GB", {
 
 const numberFormatter = new Intl.NumberFormat("en-US");
 
-/** An ISO datetime as `7 Nov 2026`; `null` renders as an empty string. */
+/** An ISO datetime as `7 Nov 2026`; `null` or unusable input renders "". */
 export function formatDate(value: string | null): string {
   if (!value) {
     return "";
   }
-  return dateFormatter.format(new Date(value));
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+  return dateFormatter.format(date);
 }
 
 /**
@@ -26,9 +30,11 @@ export function formatRelativeTime(
   if (!value) {
     return "";
   }
-  const seconds = Math.floor(
-    (now.getTime() - new Date(value).getTime()) / 1000,
-  );
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
   if (seconds < 60) {
     return "just now";
   }

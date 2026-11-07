@@ -1,7 +1,8 @@
 import { createApiClient } from "@dasa122/contract";
 import { createIsomorphicFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
-import { fallbackApiOrigin, requestOrigin } from "./request";
+import { fallbackApiOrigin } from "./origin";
+import { requestOrigin } from "./request";
 
 export const apiBaseUrl = "/api";
 
