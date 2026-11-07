@@ -36,17 +36,21 @@ Pinned versions (current on npm as of 2026-11-07):
 | Layer | Choice |
 |---|---|
 | Runtime / PM | Bun 1.4.4 (only package manager) |
-| Language | TypeScript (strict) |
+| Language | TypeScript 7.0.2 (strict) |
 | Monorepo | Bun workspaces + Turborepo 2.11.10 |
 | Lint / format | Biome 2.6.6 |
-| DB | PostgreSQL 18.6 (production: Coolify-managed) + Drizzle ORM 0.45.4 + drizzle-kit 0.31.11 + postgres-js 4.1.0 |
+| Git hooks | lefthook 2.2.2 |
+| DB | PostgreSQL 18.6 (production: Coolify-managed) + Drizzle ORM 0.45.4 + drizzle-kit 0.31.11, driven by Bun's built-in Postgres client (`bun:sql`) via `drizzle-orm/bun-sql` |
 | Validation | Zod 4.6.7 |
-| API | oRPC 1.16.2 (`@orpc/contract`, `@orpc/server`, `@orpc/client`, `@orpc/tanstack-query`, `@orpc/openapi`) + Hono 4.13.17 |
-| Frontend | React 19.3.1 + TanStack Start 1.169.4 + TanStack Router 1.170.46 + TanStack Query 5.107.1 |
-| Build | Vite 8.3.6 (Nitro output, `bun` preset) |
+| API | oRPC 1.16.2 (`@orpc/contract`, `@orpc/server`, `@orpc/client`, `@orpc/tanstack-query`, `@orpc/openapi`) served by `Bun.serve` with the oRPC `RPCHandler` and `OpenAPIHandler` fetch handlers |
+| Frontend | React 19.3.1 + TanStack Start 1.169.4 + TanStack Router 1.170.46 + TanStack Query 5.107.1 + `@tanstack/react-router-ssr-query` 1.167.3 |
+| Build | Vite 8.3.6 — the TanStack Start Vite plugin emits `dist/client/` (hashed static assets) and `dist/server/server.js` (the server entry). It is *not* Nitro, and there is no `.output/` directory. |
+| Server runtime | srvx 1.0.8 — serves `dist/client` as static assets and forwards everything else to the Start handler |
 | Styling | Tailwind CSS v4.3.5 |
 | Markdown | marked 18.1.3 + shiki 4.6.0 (server-side syntax highlighting) |
 | Tests | `bun test` |
+
+> **Build command:** the build must be `bun --bun vite build`. The `bun --bun` prefix is mandatory — Bun 1.4 ignores `[run] bun = true` in `bunfig.toml`, so the workspace scripts carry the prefix explicitly.
 
 ## 5. Repository layout
 
@@ -54,9 +58,14 @@ Pinned versions (current on npm as of 2026-11-07):
 dasa122.net/
 ├── apps/
 │   ├── web/            TanStack Start SSR app  (container: web)
-│   └── api/            Bun + Hono + oRPC API  (container: api, internal only)
+│   └── api/            Bun.serve + oRPC API  (container: api)
 ├── packages/
 │   ├── contract/       oRPC contract + zod wire schemas
+│   │   └── src/
+│   │       ├── contract/      oRPC contracts (oc.route(...).input(...).output(...))
+│   │       ├── domains/       hand-written zod wire schemas, one file per domain
+│   │       ├── client/        client factory -> { client, orpc }
+│   │       └── errors.ts      the shared error map
 │   └── ui/             shared React components + design tokens
 ├── drizzle/            Drizzle migrations (committed)
 ├── docs/
@@ -67,6 +76,19 @@ dasa122.net/
 ```
 
 `packages/contract` is the single source of truth for every request and response shape. Both apps depend on it; neither depends on the other.
+
+### 5.1 Proven conventions
+
+This project deliberately mirrors the conventions of an existing, already-running monorepo on the same infrastructure (Bun workspaces + Turborepo + Biome + oRPC + Drizzle + TanStack Start). The following are copied rather than invented:
+
+- **Root scripts:** `dev` (`turbo run dev`), `lint` (`biome check --write .`), `build` (`turbo run build`), `typecheck` (`turbo run typecheck`), `test` (`turbo run test`).
+- **Turborepo tasks:** `build` (dependsOn `^build`, outputs `dist/**`), `typecheck` (dependsOn `^typecheck`), `test` (dependsOn `^build`, `cache: false`), `dev` (persistent, not cached).
+- **Biome:** `correctness` and `security` rules are the enforced baseline; `style`/`complexity`/`a11y` are advisory and enabled selectively. `useImportExtensions` is **off** (the Bun resolver needs no extensions). `noNodejsModules` is **error** for all app and package sources. `noUndeclaredDependencies` is **error**. `useSortedKeys` is **off** for route files (TanStack Router route-property order is semantic) and for Drizzle schema files (column order is semantic). Assist actions `organizeImports`, `useSortedKeys`, `useSortedAttributes` are on.
+- **Pre-commit:** lefthook running `biome check --write` on staged files.
+- **CI gate order:** `bun install --frozen-lockfile` → `biome check .` (no write) → `bun typecheck` → `bun run build` → `bun run test`, with a PostgreSQL service container for the test job.
+- **Migrations are applied automatically at boot** by the API process via Drizzle's `migrate()` — there is no separate migration step in the container startup. The `migrationsFolder` path is relative to the process working directory, so the release image must contain the migrations at that exact path.
+- **Contract authoring:** the root contract is `oc.errors(errorMap).router({ ... })`. Each procedure is `oc.route({ method, path, tags, operationId, description }).input(zodSchema).output(zodSchema)`. Wire schemas are **hand-written zod** in `packages/contract/src/domains/`, never derived from Drizzle types. The server side uses `implement(appContract).$context<ApiContext>()` followed by `base.router({ ... })`, which type-checks the implementation against the contract. The client factory returns `{ client, orpc: createTanstackQueryUtils(client) }`.
+- **List responses are `{ items, total }`** — there is no response envelope.
 
 ## 6. Domain model
 
@@ -180,9 +202,29 @@ Defined in `packages/contract` with `os.contract` / `os.router`, implemented in 
 
 **Error map** — defined once with `oc.errors`, consumed by both server and client so failures are discriminated unions rather than strings:
 
-`UNAUTHORIZED` · `FORBIDDEN` · `NOT_FOUND` · `VALIDATION` · `CONFLICT` · `RATE_LIMITED` · `INTEGRATION_UNAVAILABLE`
+| Code | HTTP | Notes |
+|---|---|---|
+| `BAD_REQUEST` | 400 | |
+| `CONFLICT` | 409 | |
+| `FORBIDDEN` | 403 | |
+| `INTERNAL` | 500 | |
+| `NOT_FOUND` | 404 | |
+| `RATE_LIMITED` | 429 | optional `retryAfter` |
+| `UNAUTHORIZED` | 401 | |
+| `UNKNOWN` | 500 | |
+| `VALIDATION` | 400 | |
+| `INTEGRATION_UNAVAILABLE` | 503 | a feed source is configured but not usable |
 
-**REST surface** — the oRPC OpenAPI handler is mounted at `/api/openapi/*` so the same procedures are reachable over plain HTTP for debugging.
+**REST surface** — the same procedures are reachable two ways, mounted by two different oRPC fetch handlers:
+
+| Surface | Path |
+|---|---|
+| Typed oRPC (RPC protocol) | `/api/rpc/*` |
+| The same procedures over plain REST | `/api/*` |
+| Generated OpenAPI document | `/api/doc/openapi.json` |
+| Swagger UI | `/api/doc/swagger` |
+
+**Client wiring** — the browser client targets `${window.location.origin}/api/rpc` with `credentials: 'same-origin'`; the server-side client resolves the origin from the `x-forwarded-host` / `x-forwarded-proto` request headers, falling back to `API_ORIGIN`. The relative `/api/rpc` path must not be passed to the oRPC link codec directly — the link codec builds a `URL` from it, and the browser `URL` constructor rejects a relative base.
 
 ## 8. Authentication and authorization
 
@@ -200,13 +242,25 @@ Authentik OIDC, **authorization code + PKCE**.
 - Logout deletes the session row, clears the cookie, and redirects to the Authentik end-session endpoint.
 - CSRF: mutating procedures reject requests whose `Origin` does not match the configured public origin.
 
+**Authentik routes** — `/api/auth/login`, `/api/auth/callback`, `/api/auth/logout` and `/api/auth/session` are handled by the API container **before** the oRPC handler dispatch, at paths under `/api/auth/`. They are not oRPC procedures. The callback URL is therefore `https://dasa122.net/api/auth/callback`.
+
 ### Session and cookie topology
 
-The API container is **internal only** — it has no public FQDN. The web container reverse-proxies `/api/*` to it. Consequences:
+The site is served from a **single public origin**, `https://dasa122.net`. Two Coolify applications share that hostname and the platform's Traefik splits traffic by path:
 
-- The browser only ever talks to `https://dasa122.net`.
-- The session cookie is **host-only for `dasa122.net`** and is never sent to `auth.dasa122.net`, `mail.dasa122.net`, or any other subdomain.
-- The API is not reachable from the internet.
+| App | Coolify FQDN | Generated Traefik rule | Port |
+|---|---|---|---|
+| `web` | `https://dasa122.net` | ``Host(`dasa122.net`)`` | 3000 |
+| `api` | `https://dasa122.net/api` | ``Host(`dasa122.net`) && PathPrefix(`/api`)`` | 3001 |
+
+Coolify generates the `PathPrefix` rule automatically when the application FQDN carries a path; this was verified by decoding the live labels of an existing application on the same infrastructure that already serves a frontend and an API this way.
+
+Consequences:
+
+- The browser only ever talks to `https://dasa122.net`. There is no second hostname and no CORS.
+- The session cookie is **host-only for `dasa122.net`**. It is never sent to `auth.dasa122.net`, `mail.dasa122.net`, or any other subdomain.
+- **No proxy code lives in the web application.** The platform routes `/api/*` to the API container.
+- Server-side rendering calls the API over HTTP at the same public origin (`/api/rpc`), resolving that origin from the `x-forwarded-host` / `x-forwarded-proto` request headers.
 
 ## 9. Integrations
 
@@ -357,36 +411,41 @@ Editing is client-side state with a **server-validated** save. Drafts are autosa
 
 ### Containers
 
-| App | Build | Runtime | Port |
-|---|---|---|---|
-| `web` | `vite build` with `NITRO_PRESET=bun` → `.output/server/index.mjs` | `oven/bun:1-alpine`, `bun run .output/server/index.mjs` | 3000 |
-| `api` | `bun build` → `dist/index.js` | `oven/bun:1-alpine`, `bun run dist/index.js` | 3001 |
+| App | Build | Artifact | Runtime command | Port |
+|---|---|---|---|---|
+| `web` | `bun --bun vite build` | `dist/client/` + `dist/server/server.js` | `bun node_modules/srvx/bin/srvx.mjs serve --prod --port 3000 -s /app/apps/web/dist/client /app/apps/web/dist/server/server.js` | 3000 |
+| `api` | `Bun.build` (target `bun`) | `dist/index.js` | `bun --bun run dist/index.js` | 3001 |
 
-Both run as a non-root user. The `web` container proxies `/api/*` to `http://api:3001`.
-
-Healthchecks use `wget -q -O-` (busybox) with a `curl` fallback — the Alpine base image has no `curl` by default.
+- Both images are based on `oven/bun:1.4.4-alpine` and run as the non-root `bun` user.
+- The `web` release stage must copy the root `node_modules` **and** `apps/web/node_modules`, and must keep the build output at `apps/web/dist`. The server bundle treats `react`, `react-dom`, and the `@tanstack/*` packages as external and resolves them by walking up from its own directory; `apps/web/node_modules/*` are symlinks into the root `.bun` store, so flattening the layout breaks resolution.
+- `srvx` must be invoked by its **direct binary path**, never through `bun x` — `bun x` would fetch the package from the network at container start.
+- The `api` release stage must copy the migrations folder to `/app/src/database/migrations`, because the `migrationsFolder` option is resolved relative to the process working directory and migrations are applied at boot.
+- Healthchecks use busybox `wget`, since the Alpine base image has no `curl`: `web` → `http://127.0.0.1:3000/healthz`, `api` → `http://127.0.0.1:3001/api/health`.
+- **The web application must actually implement a `/healthz` route.** A comparable existing application on this infrastructure has a Dockerfile healthcheck pointing at `/healthz` but no such route in the application, so that check can never pass. Do not copy that. `/healthz` is a liveness check and must not depend on the database; a separate readiness check covers the database.
 
 ### Coolify
 
 - Project: `dasa122.net`.
-- App `web`: FQDN `https://dasa122.net`, port 3000, env `API_INTERNAL_URL=http://api:3001`, `PUBLIC_ORIGIN=https://dasa122.net`.
-- App `api`: **no FQDN** (internal only), port 3001, env `DATABASE_URL`, `AUTHENTIK_ISSUER`, `AUTHENTIK_CLIENT_ID`, `AUTHENTIK_CLIENT_SECRET`, `AUTHENTIK_ADMIN_GROUP=dasa122.net-admin`, `GITHUB_TOKEN`, `GITHUB_USERNAME`, `GITHUB_SYNC_INTERVAL_MINUTES`, `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET`, `LINKEDIN_ACCESS_TOKEN`, `SESSION_SECRET`, `NODE_ENV=production`.
-- Database: Coolify-managed PostgreSQL, `is_public: false`.
+- **App `web`:** FQDN `https://dasa122.net`, port 3000. Env: `PUBLIC_ORIGIN=https://dasa122.net`, `API_ORIGIN=https://dasa122.net`, `VITE_API_ORIGIN=https://dasa122.net`, `NODE_ENV=production`.
+- **App `api`:** FQDN **`https://dasa122.net/api`**, port 3001. Env: `DATABASE_URL`, `AUTHENTIK_ISSUER`, `AUTHENTIK_CLIENT_ID`, `AUTHENTIK_CLIENT_SECRET`, `AUTHENTIK_ADMIN_GROUP=dasa122.net-admin`, `SESSION_SECRET`, `GITHUB_TOKEN`, `GITHUB_USERNAME`, `GITHUB_SYNC_INTERVAL_MINUTES`, `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET`, `LINKEDIN_ACCESS_TOKEN`, `NODE_ENV=production`.
+- **Database:** Coolify-managed PostgreSQL, `is_public: false`.
 
-### DNS and reverse proxy (already done by the owner)
+### 16.1 DNS and reverse proxy
 
 - `dasa122.net` → `84.2.16.116`, DNS-only (not proxied). Already in place.
 - The apex is **not** covered by the existing `*.dasa122.net` wildcard certificate, so Caddy must obtain a separate certificate for `dasa122.net`. HTTP-01 works because Caddy owns port 80 on that IP.
 - The Caddy block forwards to Coolify Traefik at `10.0.1.80:443` with `header_up Host {host}` and `tls_insecure_skip_verify` — matching the existing pattern for the other hostnames.
 - `auth.dasa122.net` → `84.2.16.116`, already in place; Authentik provider created by the owner with redirect URI `https://dasa122.net/api/auth/callback`.
+- The `api` application is served under the same hostname at the `/api` path prefix, so the reverse proxy configuration needs only the single `dasa122.net` hostname that already exists — no additional DNS record or certificate is required for the API.
 
 ### Environment variables
 
 | Variable | Required | Default | Notes |
 |---|---|---|---|
 | `DATABASE_URL` | yes | — | Postgres connection string |
-| `PUBLIC_ORIGIN` | yes | — | e.g. `https://dasa122.net`; used for CSRF origin checks and cookie scope |
-| `API_INTERNAL_URL` | web only | `http://api:3001` | Internal API base for the web proxy |
+| `PUBLIC_ORIGIN` | yes | — | e.g. `https://dasa122.net`; used for CSRF origin checks and canonical URL generation |
+| `API_ORIGIN` | no | `https://dasa122.net` | fallback origin for server-side API calls when `x-forwarded-*` headers are absent |
+| `VITE_API_ORIGIN` | no | `https://dasa122.net` | baked into the client bundle; fallback origin for server renders |
 | `AUTHENTIK_ISSUER` | yes | — | e.g. `https://auth.dasa122.net/application/o/dasa122-net/` |
 | `AUTHENTIK_CLIENT_ID` | yes | — | Empty ⇒ admin shows "not configured" |
 | `AUTHENTIK_CLIENT_SECRET` | yes | — | Empty ⇒ admin shows "not configured" |
