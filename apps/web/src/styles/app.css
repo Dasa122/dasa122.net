@@ -118,12 +118,7 @@
   :focus-visible {
     outline: 1px solid var(--color-ember);
     outline-offset: 2px;
-    border-radius: var(--radius-sm);
   }
-}
-
-.section {
-  padding-block: clamp(4rem, 10vw, 9rem);
 }
 
 @media (prefers-reduced-motion: no-preference) {

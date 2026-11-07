@@ -1,7 +1,8 @@
 import type { siteSettingsSchema } from "@dasa122/contract";
-import { Rule, Section } from "@dasa122/ui";
+import { Rule } from "@dasa122/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { SectionHeading } from "../components/section-heading";
 import { canonicalOrigin } from "../utils/canonical";
 import { orpc } from "../utils/orpc";
 
@@ -13,8 +14,7 @@ const DESCRIPTION =
   "About Dasa122 — the current focus, elsewhere on the web, and how to get in touch.";
 
 const frame = "mx-auto w-full max-w-[80rem] px-6 md:px-10";
-const label =
-  "font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-muted";
+const page = `${frame} pt-[clamp(2.5rem,6vw,4.5rem)] pb-[clamp(4rem,10vw,9rem)]`;
 
 const sourceLabels = {
   github: "Building in public on GitHub",
@@ -55,18 +55,16 @@ export function AboutPage() {
 
   return (
     <main className="flex-1">
-      <div className={frame}>
-        <Section>
-          {site.isPending && (
-            <p className="font-mono text-[0.75rem] text-muted">Loading…</p>
-          )}
-          {site.isError && (
-            <p className="font-mono text-[0.75rem] text-ember-text">
-              Could not load the about page.
-            </p>
-          )}
-          {site.data && <AboutContent settings={site.data} />}
-        </Section>
+      <div className={page}>
+        {site.isPending && (
+          <p className="font-mono text-[0.75rem] text-muted">Loading…</p>
+        )}
+        {site.isError && (
+          <p className="font-mono text-[0.75rem] text-ember-text">
+            Could not load the about page.
+          </p>
+        )}
+        {site.data && <AboutContent settings={site.data} />}
       </div>
     </main>
   );
@@ -121,10 +119,7 @@ function AboutContent({ settings }: { settings: Settings }) {
       <header className="grid grid-cols-12 gap-x-6 gap-y-6">
         <div className="hidden md:col-span-4 md:block" />
         <div className="col-span-12 md:col-span-7 md:col-start-6">
-          <p className={label}>{settings.name}</p>
-          <h1 className="mt-4 font-display text-[clamp(3rem,9vw,6rem)] leading-[0.95] tracking-[-0.03em]">
-            About
-          </h1>
+          <SectionHeading as="h1" label={settings.name} title="About" />
           {settings.tagline && (
             <p className="mt-6 max-w-[42ch] text-lg leading-relaxed text-ink md:text-xl">
               {settings.tagline}
@@ -139,7 +134,9 @@ function AboutContent({ settings }: { settings: Settings }) {
             <Rule />
           </div>
           <div className="mt-10 grid grid-cols-12 gap-x-6 gap-y-4">
-            <p className={`${label} col-span-12 md:col-span-3`}>Biography</p>
+            <p className="col-span-12 font-mono text-[0.625rem] uppercase tracking-[0.18em] text-muted md:col-span-3">
+              Biography
+            </p>
             <p className="col-span-12 max-w-[68ch] text-[1.0625rem] leading-[1.75] text-ink md:col-span-7">
               {settings.description}
             </p>
@@ -155,7 +152,7 @@ function AboutContent({ settings }: { settings: Settings }) {
         <div className="hidden md:col-span-4 md:block" />
         <div className="col-span-12 space-y-10 md:col-span-7 md:col-start-6">
           <section>
-            <h2 className={label}>CURRENTLY</h2>
+            <SectionHeading label="01" title="Currently" />
             {settings.enabledSources.length > 0 ? (
               <ul className="mt-4 space-y-2 text-ink">
                 {settings.enabledSources.map((source) => (
@@ -170,7 +167,7 @@ function AboutContent({ settings }: { settings: Settings }) {
           </section>
 
           <section>
-            <h2 className={label}>ELSEWHERE</h2>
+            <SectionHeading label="02" title="Elsewhere" />
             {elsewhere.length > 0 ? (
               <ul className="mt-4 flex flex-wrap gap-x-6 gap-y-2">
                 {elsewhere.map((link) => (
@@ -194,7 +191,7 @@ function AboutContent({ settings }: { settings: Settings }) {
           </section>
 
           <section>
-            <h2 className={label}>CONTACT</h2>
+            <SectionHeading label="03" title="Contact" />
             {settings.socials.email ? (
               <p className="mt-4">
                 <a

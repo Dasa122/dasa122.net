@@ -7,20 +7,25 @@ export type Project = ReturnType<typeof projectSchema.parse>;
 /**
  * One line of the featured-work strip: title link, a one-line summary, and the
  * stack. A row, not a card — the parent supplies the hairline rules.
+ *
+ * The title link is stretched over the whole row with an absolutely positioned
+ * `::after`, so clicking anywhere on the row navigates.
  */
 export function ProjectRow({ project }: { project: Project }) {
-  const className =
-    "transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] hover:text-ember-text";
+  const linkClass =
+    "transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] after:absolute after:inset-0 after:content-[''] hover:text-ember-text";
 
   return (
-    <article className="group relative -mx-3 rounded-[var(--radius-md)] px-3 py-6 pr-10 transition-[background-color,transform] duration-200 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-[var(--color-surface-2)] active:scale-[0.998]">
-      <h3 className="text-2xl leading-tight tracking-[-0.01em] transition-transform duration-200 group-hover:translate-x-1 md:text-3xl">
+    <article className="group relative -mx-3 rounded-[var(--radius-md)] px-3 py-6 pr-10 transition-[background-color,transform] duration-200 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-[var(--color-surface-2)] has-[a:active]:scale-[0.998]">
+      <h3 className="text-2xl leading-tight tracking-[-0.01em]">
         <Link
-          className={className}
+          className={linkClass}
           params={{ slug: project.slug }}
           to="/work/$slug"
         >
-          {project.title}
+          <span className="inline-block transition-transform duration-200 group-hover:translate-x-1">
+            {project.title}
+          </span>
         </Link>
       </h3>
       <p className="mt-2 max-w-[60ch] text-muted">{project.summary}</p>

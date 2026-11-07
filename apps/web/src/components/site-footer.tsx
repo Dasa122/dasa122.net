@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { navigation } from "../lib/navigation";
 
 export function SiteFooter({ name }: { name: string }) {
@@ -12,13 +13,13 @@ export function SiteFooter({ name }: { name: string }) {
           className="col-span-12 flex flex-wrap gap-5 md:col-span-4 md:col-start-9 md:justify-end"
         >
           {navigation.map((item) => (
-            <a
+            <Link
               className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-muted transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] hover:text-ember-text"
-              href={item.href}
               key={item.href}
+              to={item.href}
             >
               {item.label}
-            </a>
+            </Link>
           ))}
         </nav>
       </div>

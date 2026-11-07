@@ -81,9 +81,13 @@ function HomePage() {
                 systems between them.
               </p>
               <p className="mt-6 flex items-center gap-3 font-mono text-[0.75rem] tabular-nums text-muted">
-                <span>{posts.data?.total ?? "—"} notes</span>
+                <span title={posts.isError ? "unavailable" : undefined}>
+                  {posts.data?.total ?? "—"} posts
+                </span>
                 <span aria-hidden="true" className="h-3 w-px bg-rule" />
-                <span>{projects.data?.total ?? "—"} projects</span>
+                <span title={projects.isError ? "unavailable" : undefined}>
+                  {projects.data?.total ?? "—"} projects
+                </span>
               </p>
             </div>
           </header>

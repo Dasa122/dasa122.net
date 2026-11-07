@@ -1,9 +1,10 @@
 import type { postSourceSchema } from "@dasa122/contract";
-import { Button, Rule, Section } from "@dasa122/ui";
+import { Button, Rule } from "@dasa122/ui";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Fragment, type ReactNode } from "react";
 import { PostRow } from "../../components/post-row";
+import { SectionHeading } from "../../components/section-heading";
 import { canonicalOrigin } from "../../utils/canonical";
 import { orpc } from "../../utils/orpc";
 
@@ -32,7 +33,7 @@ const DESCRIPTION =
   "Notes, releases, and imported activity — everything published on Dasa122.";
 
 const frame = "mx-auto w-full max-w-[80rem] px-6 md:px-10";
-const heading = "text-3xl leading-tight tracking-[-0.01em] md:text-4xl";
+const page = `${frame} pt-[clamp(2.5rem,6vw,4.5rem)] pb-[clamp(4rem,10vw,9rem)]`;
 const filterLink =
   "font-mono text-[0.75rem] uppercase tracking-[0.14em] transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] hover:text-ember-text";
 
@@ -147,106 +148,103 @@ function NewsPage() {
 
   return (
     <main className="flex-1">
-      <div className={frame}>
-        <Section>
-          <header>
-            <h1 className={heading}>News</h1>
-            <p className="mt-4 max-w-[48ch] text-lg leading-relaxed text-ink">
-              Notes, releases, and imported activity — everything published
-              here.
-            </p>
-          </header>
+      <div className={page}>
+        <header>
+          <SectionHeading as="h1" label="Journal" title="News" />
+          <p className="mt-5 max-w-[48ch] text-lg leading-relaxed text-ink">
+            Notes, releases, and imported activity — everything published here.
+          </p>
+        </header>
 
-          <nav
-            aria-label="Filter the feed"
-            className="mt-8 flex flex-wrap items-baseline gap-x-3 gap-y-2"
+        <nav
+          aria-label="Filter the feed"
+          className="mt-8 flex flex-wrap items-baseline gap-x-3 gap-y-2"
+        >
+          <FilterLink
+            active={search.source === undefined}
+            search={{ ...search, cursor: undefined, source: undefined }}
           >
-            <FilterLink
-              active={search.source === undefined}
-              search={{ ...search, cursor: undefined, source: undefined }}
-            >
-              All
-            </FilterLink>
-            {SOURCES.map((option) => (
-              <Fragment key={option.value}>
-                <Dot />
-                <FilterLink
-                  active={search.source === option.value}
-                  search={{
-                    ...search,
-                    cursor: undefined,
-                    source: option.value,
-                  }}
-                >
-                  {option.label}
-                </FilterLink>
-              </Fragment>
-            ))}
-            {search.tag && (
-              <>
-                <Dot />
-                <FilterLink
-                  search={{ ...search, cursor: undefined, tag: undefined }}
-                >
-                  tagged “{search.tag}” ×
-                </FilterLink>
-              </>
-            )}
-            {search.year && (
-              <>
-                <Dot />
-                <FilterLink
-                  search={{ ...search, cursor: undefined, year: undefined }}
-                >
-                  {search.year} ×
-                </FilterLink>
-              </>
-            )}
-          </nav>
+            All
+          </FilterLink>
+          {SOURCES.map((option) => (
+            <Fragment key={option.value}>
+              <Dot />
+              <FilterLink
+                active={search.source === option.value}
+                search={{
+                  ...search,
+                  cursor: undefined,
+                  source: option.value,
+                }}
+              >
+                {option.label}
+              </FilterLink>
+            </Fragment>
+          ))}
+          {search.tag && (
+            <>
+              <Dot />
+              <FilterLink
+                search={{ ...search, cursor: undefined, tag: undefined }}
+              >
+                tagged “{search.tag}” ×
+              </FilterLink>
+            </>
+          )}
+          {search.year && (
+            <>
+              <Dot />
+              <FilterLink
+                search={{ ...search, cursor: undefined, year: undefined }}
+              >
+                {search.year} ×
+              </FilterLink>
+            </>
+          )}
+        </nav>
 
-          <div className="mt-8">
-            <Rule />
-            {feed.isPending && !feedHidden && (
-              <p className="py-5 font-mono text-[0.75rem] text-muted">
-                Loading notes…
-              </p>
-            )}
-            {feed.isError && posts.length === 0 && (
-              <p className="py-5 font-mono text-[0.75rem] text-ember-text">
-                Could not load the feed.
-              </p>
-            )}
-            {(feed.isSuccess || feedHidden) && posts.length === 0 && (
-              <p className="py-5 font-mono text-[0.75rem] text-muted">
-                Nothing published yet.
-              </p>
-            )}
-            {posts.map((post, index) => (
-              <Fragment key={post.id}>
-                {index > 0 && <Rule />}
-                <PostRow post={post} />
-              </Fragment>
-            ))}
-          </div>
-
-          {feed.isFetchNextPageError && (
-            <p className="py-5 font-mono text-[0.75rem] text-ember-text">
-              Could not load more notes.
+        <div className="mt-8">
+          <Rule />
+          {feed.isPending && !feedHidden && (
+            <p className="py-5 font-mono text-[0.75rem] text-muted">
+              Loading notes…
             </p>
           )}
-
-          {feed.hasNextPage && (
-            <div className="mt-8">
-              <Button
-                disabled={feed.isFetchingNextPage}
-                onClick={() => feed.fetchNextPage()}
-                variant="quiet"
-              >
-                {feed.isFetchingNextPage ? "Loading…" : "Load more"}
-              </Button>
-            </div>
+          {feed.isError && posts.length === 0 && (
+            <p className="py-5 font-mono text-[0.75rem] text-ember-text">
+              Could not load the feed.
+            </p>
           )}
-        </Section>
+          {(feed.isSuccess || feedHidden) && posts.length === 0 && (
+            <p className="py-5 font-mono text-[0.75rem] text-muted">
+              Nothing published yet.
+            </p>
+          )}
+          {posts.map((post, index) => (
+            <Fragment key={post.id}>
+              {index > 0 && <Rule />}
+              <PostRow post={post} />
+            </Fragment>
+          ))}
+        </div>
+
+        {feed.isFetchNextPageError && (
+          <p className="py-5 font-mono text-[0.75rem] text-ember-text">
+            Could not load more notes.
+          </p>
+        )}
+
+        {feed.hasNextPage && (
+          <div className="mt-8">
+            <Button
+              disabled={feed.isFetchingNextPage}
+              onClick={() => feed.fetchNextPage()}
+              variant="quiet"
+            >
+              {feed.isFetchingNextPage ? "Loading…" : "Load more"}
+            </Button>
+          </div>
+        )}
       </div>
     </main>
   );
