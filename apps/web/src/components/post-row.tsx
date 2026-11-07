@@ -1,6 +1,7 @@
 import type { postSummarySchema } from "@dasa122/contract";
 import { Meta, SourceBadge, Tag } from "@dasa122/ui";
 import { Link } from "@tanstack/react-router";
+import { useSpotlight } from "../hooks/use-spotlight";
 import { formatDate } from "../utils/format";
 
 export type PostSummary = ReturnType<typeof postSummarySchema.parse>;
@@ -13,8 +14,14 @@ export type PostSummary = ReturnType<typeof postSummarySchema.parse>;
  * an absolutely positioned `::after`, so the fill, the nudge and the arrow are
  * hover states of the thing that actually navigates. Rows with no slug get no
  * hover affordance at all.
+ *
+ * The spotlight is the row's first child, so in paint order it sits over the
+ * row's own background but under the link's stretched `::after` and the focus
+ * ring: the hit area and the keyboard affordance are untouched.
  */
 export function PostRow({ post }: { post: PostSummary }) {
+  const spotlight = useSpotlight<HTMLElement>();
+
   const linkClass =
     "transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] after:absolute after:inset-0 after:content-[''] hover:text-ember-text";
 
@@ -29,7 +36,10 @@ export function PostRow({ post }: { post: PostSummary }) {
           ? " hover:bg-[var(--color-surface-2)] has-[a:active]:scale-[0.998]"
           : ""
       }`}
+      ref={spotlight.ref}
+      {...spotlight.handlers}
     >
+      <span aria-hidden="true" className="row-spotlight" />
       <div className="w-16 shrink-0 sm:w-20">
         <SourceBadge source={post.source} />
       </div>

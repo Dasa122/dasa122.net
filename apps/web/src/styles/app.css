@@ -423,3 +423,192 @@
     text-transform: uppercase;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Progressive blur under the sticky header. Cult UI stacks several masked
+   blurred layers; one masked `backdrop-filter` gets most of the way there for
+   a single paint pass. The layer is a leaf inside the header (pinned to its
+   bottom edge) so it scrolls with it and owns no children, and the mask makes
+   the blur fade out downward instead of ending on a hard edge.
+   --------------------------------------------------------------------------- */
+.header-blur {
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  height: 34px;
+  /* Behind the mobile menu panel, which also hangs off the header's bottom
+     edge: an open panel must not be blurred by the band sitting on top of it. */
+  z-index: -1;
+  pointer-events: none;
+  backdrop-filter: blur(10px);
+  mask-image: linear-gradient(to bottom, black, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Decorative only: nothing is lost by not rendering it at all. */
+  .header-blur {
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Row spotlight. `use-spotlight.ts` writes `--mx` / `--my` as percentages on
+   a rAF tick; this layer just paints the pool. The row's own background is
+   painted first, the layer next, and the stretched link `::after` and the
+   focus ring after it, so the hit area and the keyboard ring stay on top.
+
+   The layer's opacity is capped at 0.10 in the hover state below, so the
+   gradient stop has to carry the strength: 14% ember there would multiply to
+   1.4% alpha, which is invisible on either surface. 50% in dark and 40% in
+   light (ember is darker and more saturated on paper, so the same alpha
+   reads stronger there) land at a 5% / 4% peak.
+   --------------------------------------------------------------------------- */
+.row-spotlight {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-md);
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    14rem 14rem at var(--mx, 50%) var(--my, 50%),
+    color-mix(in oklab, var(--color-ember) 40%, transparent),
+    transparent 70%
+  );
+  transition: opacity 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.dark .row-spotlight {
+  background: radial-gradient(
+    14rem 14rem at var(--mx, 50%) var(--my, 50%),
+    color-mix(in oklab, var(--color-ember) 50%, transparent),
+    transparent 70%
+  );
+}
+
+@media (hover: hover) {
+  .row-lift:hover > .row-spotlight,
+  .row-lift:focus-within > .row-spotlight {
+    opacity: 0.1;
+  }
+}
+
+/* No pointer to follow, or motion was asked to stop: the layer is not there at
+   all, so it can never leave a stray glow or a transition behind. */
+@media (hover: none), (prefers-reduced-motion: reduce) {
+  .row-spotlight {
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   The stack band: one track of two identical halves translated by -50%, so
+   the seam is invisible. Each half repeats the list (the component's
+   `REPEATS`) because a single pass is narrower than a desktop viewport, which
+   would leave a blank stretch at the end of the loop. The band masks both
+   edges so content fades rather than being clipped mid-letter.
+   --------------------------------------------------------------------------- */
+.marquee {
+  overflow: hidden;
+  border-block: 1px solid var(--hairline);
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 8%,
+    black 92%,
+    transparent
+  );
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+}
+
+.marquee-half {
+  display: flex;
+  flex-shrink: 0;
+  min-width: 100vw;
+  justify-content: space-around;
+}
+
+.marquee-run {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 0.75rem;
+  padding-block: 0.75rem;
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* The separator is part of the item, not a flex child of its own, so a
+   wrapping static band never starts a line with a stray middot. */
+.marquee-item {
+  white-space: nowrap;
+}
+
+.marquee-item::after {
+  content: "·";
+  margin-left: 0.75rem;
+  color: var(--color-ember);
+}
+
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .marquee-track {
+    animation: marquee-scroll 28s linear infinite;
+  }
+
+  .marquee:hover .marquee-track {
+    animation-play-state: paused;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Static: one pass of the list, wrapping onto as many lines as it needs, no
+     sideways motion and nothing to clip. The repeats and the second half are
+     the copies that only exist for the animation, so they go. */
+  .marquee {
+    mask-image: none;
+  }
+
+  .marquee-track {
+    display: block;
+    width: auto;
+  }
+
+  .marquee-half {
+    display: block;
+    min-width: 0;
+  }
+
+  .marquee-half[aria-hidden="true"],
+  .marquee-run[aria-hidden="true"] {
+    display: none;
+  }
+
+  .marquee-run {
+    flex-wrap: wrap;
+    row-gap: 0.25rem;
+    padding-inline: 1.5rem;
+    white-space: normal;
+  }
+
+  @media (width >= 48rem) {
+    .marquee-run {
+      padding-inline: 2.5rem;
+    }
+  }
+}

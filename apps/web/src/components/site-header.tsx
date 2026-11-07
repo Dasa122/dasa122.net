@@ -196,6 +196,11 @@ export function SiteHeader({ name }: { name: string }) {
       </div>
 
       <noscript dangerouslySetInnerHTML={{ __html: fallbackNav }} />
+
+      {/* One masked backdrop-blur layer instead of Cult UI's stack: the blur
+          fades out below the header so scrolled content never ends in a hard
+          line. Decorative, never clickable, gone under reduced motion. */}
+      <div aria-hidden="true" className="header-blur" />
     </header>
   );
 }
