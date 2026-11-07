@@ -2,6 +2,7 @@ import { buttonClassName, Rule, Section } from "@dasa122/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Fragment } from "react";
+import { Marquee } from "../components/marquee";
 import { PostRow } from "../components/post-row";
 import { ProjectRow } from "../components/project-row";
 import { SectionHeading, SectionKicker } from "../components/section-heading";
@@ -16,6 +17,19 @@ const DESCRIPTION =
   "Dasa122 builds careful software for the web: notes on interfaces, APIs, and the systems between them.";
 
 const frame = "mx-auto w-full max-w-[80rem] px-6 md:px-10";
+
+// The band between the hero and the work: what the site is built with.
+const STACK = [
+  "TYPESCRIPT",
+  "REACT",
+  "BUN",
+  "POSTGRESQL",
+  "TANSTACK",
+  "ORPC",
+  "TAILWIND",
+  "DOCKER",
+  "CLOUDFLARE",
+];
 
 // One options object per query, shared by the loader's prefetch and the
 // component's `useQuery` so the server render is never fetched twice.
@@ -112,9 +126,16 @@ function HomePage() {
               </p>
             </div>
           </header>
-          <Rule className="mt-16 md:mt-24" />
         </div>
+      </div>
 
+      {/* Full-bleed between the hero and the work. The band's own top border
+          is the divider, so the hero no longer ends with its own rule. */}
+      <div className="mt-16 md:mt-24">
+        <Marquee items={STACK} />
+      </div>
+
+      <div className={frame}>
         {projects.isError && (
           <p className="pt-8 font-mono text-[0.75rem] text-ember-text">
             Could not load the featured work.

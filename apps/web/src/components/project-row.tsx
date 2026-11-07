@@ -1,6 +1,7 @@
 import type { projectSchema } from "@dasa122/contract";
 import { Meta } from "@dasa122/ui";
 import { Link } from "@tanstack/react-router";
+import { useSpotlight } from "../hooks/use-spotlight";
 
 export type Project = ReturnType<typeof projectSchema.parse>;
 
@@ -9,14 +10,22 @@ export type Project = ReturnType<typeof projectSchema.parse>;
  * stack. A row, not a card — the parent supplies the hairline rules.
  *
  * The title link is stretched over the whole row with an absolutely positioned
- * `::after`, so clicking anywhere on the row navigates.
+ * `::after`, so clicking anywhere on the row navigates. The spotlight is the
+ * row's first child, so it paints under that hit area and under the focus ring.
  */
 export function ProjectRow({ project }: { project: Project }) {
+  const spotlight = useSpotlight<HTMLElement>();
+
   const linkClass =
     "transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] after:absolute after:inset-0 after:content-[''] hover:text-ember-text";
 
   return (
-    <article className="group row-lift relative -mx-3 rounded-[var(--radius-md)] px-3 py-6 pr-10 hover:bg-[var(--color-surface-2)] has-[a:active]:scale-[0.998]">
+    <article
+      className="group row-lift relative -mx-3 rounded-[var(--radius-md)] px-3 py-6 pr-10 hover:bg-[var(--color-surface-2)] has-[a:active]:scale-[0.998]"
+      ref={spotlight.ref}
+      {...spotlight.handlers}
+    >
+      <span aria-hidden="true" className="row-spotlight" />
       <h3 className="text-2xl leading-tight tracking-[-0.01em]">
         <Link
           className={linkClass}
