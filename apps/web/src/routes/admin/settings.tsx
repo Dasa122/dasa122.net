@@ -1,4 +1,4 @@
-import { Section } from "@dasa122/ui";
+import { Rule, Section } from "@dasa122/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
@@ -82,6 +82,7 @@ function AdminSettings() {
           </header>
 
           <div className="mt-10">
+            <Rule />
             {settings.isPending && (
               <p className="py-5 font-mono text-[0.75rem] text-muted">
                 Loading the settings…

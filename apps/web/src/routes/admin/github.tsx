@@ -1,7 +1,7 @@
 import { Button, DataPanel, Meta, Rule, Section } from "@dasa122/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 import { formatNumber, formatRelativeTime } from "../../utils/format";
 import { orpc } from "../../utils/orpc";
 
@@ -26,6 +26,9 @@ export const Route = createFileRoute("/admin/github")({
 function AdminGithub() {
   const status = useQuery(statusOptions);
   const queryClient = useQueryClient();
+  const [optimisticFeatured, setOptimisticFeatured] = useState<string[] | null>(
+    null,
+  );
 
   const refresh = () => {
     void queryClient.invalidateQueries({
@@ -42,18 +45,31 @@ function AdminGithub() {
 
   const data = status.data;
   const repos = data?.repos ?? [];
-  const featuredNames = new Set(
-    repos.filter((repo) => repo.featured).map((repo) => repo.name),
-  );
+  const serverFeatured = repos
+    .filter((repo) => repo.featured)
+    .map((repo) => repo.name);
+  // The last PATCH response or an in-flight toggle wins over the status query:
+  // a second click must build on the first even while the refetch is still in
+  // flight.
+  const featuredNames = new Set(optimisticFeatured ?? serverFeatured);
 
   const toggleFeatured = (name: string) => {
-    const next = new Set(featuredNames);
+    const previous = [...featuredNames];
+    const next = new Set(previous);
     if (next.has(name)) {
       next.delete(name);
     } else {
       next.add(name);
     }
-    featured.mutate({ repos: [...next] });
+    const names = [...next];
+    setOptimisticFeatured(names);
+    featured.mutate(
+      { repos: names },
+      {
+        onError: () => setOptimisticFeatured(previous),
+        onSuccess: (result) => setOptimisticFeatured(result.repos),
+      },
+    );
   };
 
   const syncError = sync.isError
