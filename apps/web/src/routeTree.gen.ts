@@ -20,12 +20,14 @@ import { Route as AdminLinkedinRouteImport } from './routes/admin/linkedin'
 import { Route as AdminNewsRouteImport } from './routes/admin/news'
 import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
 import { Route as AdminWorkRouteImport } from './routes/admin/work'
+import { Route as GithubIndexRouteImport } from './routes/github.index'
 import { Route as NewsIndexRouteImport } from './routes/news/index'
 import { Route as NewsSlugRouteImport } from './routes/news/$slug'
 import { Route as WorkIndexRouteImport } from './routes/work/index'
 import { Route as WorkSlugRouteImport } from './routes/work/$slug'
 import { Route as AdminNewsIdRouteImport } from './routes/admin/news.$id'
 import { Route as AdminNewsNewRouteImport } from './routes/admin/news.new'
+import { Route as GithubOwnerRepoRouteImport } from './routes/github.$owner.$repo'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -82,6 +84,11 @@ const AdminWorkRoute = AdminWorkRouteImport.update({
   path: '/work',
   getParentRoute: () => AdminRoute,
 } as any)
+const GithubIndexRoute = GithubIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => GithubRoute,
+} as any)
 const NewsIndexRoute = NewsIndexRouteImport.update({
   id: '/news/',
   path: '/news/',
@@ -112,12 +119,17 @@ const AdminNewsNewRoute = AdminNewsNewRouteImport.update({
   path: '/new',
   getParentRoute: () => AdminNewsRoute,
 } as any)
+const GithubOwnerRepoRoute = GithubOwnerRepoRouteImport.update({
+  id: '/$owner/$repo',
+  path: '/$owner/$repo',
+  getParentRoute: () => GithubRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
-  '/github': typeof GithubRoute
+  '/github': typeof GithubRouteWithChildren
   '/healthz': typeof HealthzRoute
   '/admin/github': typeof AdminGithubRoute
   '/admin/linkedin': typeof AdminLinkedinRoute
@@ -127,15 +139,16 @@ export interface FileRoutesByFullPath {
   '/news/$slug': typeof NewsSlugRoute
   '/work/$slug': typeof WorkSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/github/': typeof GithubIndexRoute
   '/news/': typeof NewsIndexRoute
   '/work/': typeof WorkIndexRoute
   '/admin/news/$id': typeof AdminNewsIdRoute
   '/admin/news/new': typeof AdminNewsNewRoute
+  '/github/$owner/$repo': typeof GithubOwnerRepoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/github': typeof GithubRoute
   '/healthz': typeof HealthzRoute
   '/admin/github': typeof AdminGithubRoute
   '/admin/linkedin': typeof AdminLinkedinRoute
@@ -145,17 +158,19 @@ export interface FileRoutesByTo {
   '/news/$slug': typeof NewsSlugRoute
   '/work/$slug': typeof WorkSlugRoute
   '/admin': typeof AdminIndexRoute
+  '/github': typeof GithubIndexRoute
   '/news': typeof NewsIndexRoute
   '/work': typeof WorkIndexRoute
   '/admin/news/$id': typeof AdminNewsIdRoute
   '/admin/news/new': typeof AdminNewsNewRoute
+  '/github/$owner/$repo': typeof GithubOwnerRepoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
-  '/github': typeof GithubRoute
+  '/github': typeof GithubRouteWithChildren
   '/healthz': typeof HealthzRoute
   '/admin/github': typeof AdminGithubRoute
   '/admin/linkedin': typeof AdminLinkedinRoute
@@ -165,10 +180,12 @@ export interface FileRoutesById {
   '/news/$slug': typeof NewsSlugRoute
   '/work/$slug': typeof WorkSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/github/': typeof GithubIndexRoute
   '/news/': typeof NewsIndexRoute
   '/work/': typeof WorkIndexRoute
   '/admin/news/$id': typeof AdminNewsIdRoute
   '/admin/news/new': typeof AdminNewsNewRoute
+  '/github/$owner/$repo': typeof GithubOwnerRepoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -186,15 +203,16 @@ export interface FileRouteTypes {
     | '/news/$slug'
     | '/work/$slug'
     | '/admin/'
+    | '/github/'
     | '/news/'
     | '/work/'
     | '/admin/news/$id'
     | '/admin/news/new'
+    | '/github/$owner/$repo'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
-    | '/github'
     | '/healthz'
     | '/admin/github'
     | '/admin/linkedin'
@@ -204,10 +222,12 @@ export interface FileRouteTypes {
     | '/news/$slug'
     | '/work/$slug'
     | '/admin'
+    | '/github'
     | '/news'
     | '/work'
     | '/admin/news/$id'
     | '/admin/news/new'
+    | '/github/$owner/$repo'
   id:
     | '__root__'
     | '/'
@@ -223,17 +243,19 @@ export interface FileRouteTypes {
     | '/news/$slug'
     | '/work/$slug'
     | '/admin/'
+    | '/github/'
     | '/news/'
     | '/work/'
     | '/admin/news/$id'
     | '/admin/news/new'
+    | '/github/$owner/$repo'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRouteWithChildren
-  GithubRoute: typeof GithubRoute
+  GithubRoute: typeof GithubRouteWithChildren
   HealthzRoute: typeof HealthzRoute
   NewsSlugRoute: typeof NewsSlugRoute
   WorkSlugRoute: typeof WorkSlugRoute
@@ -320,6 +342,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminWorkRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/github/': {
+      id: '/github/'
+      path: '/'
+      fullPath: '/github/'
+      preLoaderRoute: typeof GithubIndexRouteImport
+      parentRoute: typeof GithubRoute
+    }
     '/news/': {
       id: '/news/'
       path: '/news'
@@ -362,6 +391,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminNewsNewRouteImport
       parentRoute: typeof AdminNewsRoute
     }
+    '/github/$owner/$repo': {
+      id: '/github/$owner/$repo'
+      path: '/$owner/$repo'
+      fullPath: '/github/$owner/$repo'
+      preLoaderRoute: typeof GithubOwnerRepoRouteImport
+      parentRoute: typeof GithubRoute
+    }
   }
 }
 
@@ -399,11 +435,24 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface GithubRouteChildren {
+  GithubIndexRoute: typeof GithubIndexRoute
+  GithubOwnerRepoRoute: typeof GithubOwnerRepoRoute
+}
+
+const GithubRouteChildren: GithubRouteChildren = {
+  GithubIndexRoute: GithubIndexRoute,
+  GithubOwnerRepoRoute: GithubOwnerRepoRoute,
+}
+
+const GithubRouteWithChildren =
+  GithubRoute._addFileChildren(GithubRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
-  GithubRoute: GithubRoute,
+  GithubRoute: GithubRouteWithChildren,
   HealthzRoute: HealthzRoute,
   NewsSlugRoute: NewsSlugRoute,
   WorkSlugRoute: WorkSlugRoute,
