@@ -12,6 +12,21 @@ export const githubRepoSchema = z.object({
   url: z.url(),
 });
 
+/** One repository, as the in-site repo page renders it. */
+export const githubRepoDetailSchema = z.object({
+  defaultBranch: z.string(),
+  description: z.string().nullable(),
+  forks: z.number().int(),
+  htmlUrl: z.url(),
+  language: z.string().nullable(),
+  name: z.string(),
+  owner: z.string(),
+  readmeHtml: z.string().nullable(),
+  readmeTruncated: z.boolean(),
+  stars: z.number().int(),
+  updatedAt: z.iso.datetime(),
+});
+
 /** The GitHub overview page: the repository snapshot, the language counts,
  * the commit total, and the per-day activity for the last 90 days. All of it
  * comes from the cached snapshot — never from a live GitHub call. */
