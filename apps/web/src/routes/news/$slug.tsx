@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { MarkdownBody } from "../../components/markdown-body";
 import { canonicalOrigin } from "../../utils/canonical";
+import { isNotFound } from "../../utils/errors";
 import { formatDate } from "../../utils/format";
 import { type api, orpc } from "../../utils/orpc";
 
@@ -11,16 +12,6 @@ type PostDetail = Awaited<ReturnType<typeof api.posts.bySlug>>;
 const frame = "mx-auto w-full max-w-[80rem] px-6 md:px-10";
 const quietLink =
   "font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-muted transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] hover:text-ember-text hover:underline hover:underline-offset-4";
-
-/** The API answers a missing, draft, or future post with `NOT_FOUND`. */
-function isNotFound(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code?: unknown }).code === "NOT_FOUND"
-  );
-}
 
 function absoluteUrl(value: string): string {
   return /^https?:\/\//.test(value)

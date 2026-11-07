@@ -4,11 +4,6 @@ import { Link } from "@tanstack/react-router";
 
 export type Project = ReturnType<typeof projectSchema.parse>;
 
-// TODO(Task 16): replace the cast with "/work/$slug" once the work route tree
-// exists. The runtime value is already the real path; only the type is a
-// stand-in for the same `$slug` parameter shape.
-const workRoute = "/work/$slug" as "/news/$slug";
-
 /**
  * One line of the featured-work strip: title link, a one-line summary, and the
  * stack. A row, not a card — the parent supplies the hairline rules.
@@ -23,7 +18,7 @@ export function ProjectRow({ project }: { project: Project }) {
         <Link
           className={className}
           params={{ slug: project.slug }}
-          to={workRoute}
+          to="/work/$slug"
         >
           {project.title}
         </Link>
