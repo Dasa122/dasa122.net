@@ -48,16 +48,38 @@ export async function getSettings(): Promise<SiteSettings> {
   return parsed.success ? parsed.data : { ...DEFAULT_SITE_SETTINGS };
 }
 
-/** Merges the patch over the current settings and upserts the `site` row. */
+/** A copy of `object` without the keys whose value is `undefined`. */
+function stripUndefined<T extends object>(object: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(object).filter(([, value]) => value !== undefined),
+  ) as Partial<T>;
+}
+
+/**
+ * Merges the patch over the current settings and upserts the `site` row.
+ *
+ * oRPC parses an omitted optional key as an explicit `undefined`, so only keys
+ * the caller actually supplied may overwrite anything. `socials` is merged one
+ * level deep and its `undefined` children are ignored too. The result goes
+ * through the same schema as `getSettings`, so both read paths agree.
+ */
 export async function updateSettings(
   patch: Partial<SiteSettings>,
 ): Promise<SiteSettings> {
   const current = await getSettings();
-  const next = {
+  const { socials: socialsPatch, ...rest } = stripUndefined(patch);
+  const socials =
+    typeof socialsPatch === "object" && socialsPatch !== null
+      ? { ...current.socials, ...stripUndefined(socialsPatch) }
+      : current.socials;
+
+  const parsed = siteSettingsSchema.safeParse({
     ...current,
-    ...patch,
-    socials: { ...current.socials, ...patch.socials },
-  };
+    ...rest,
+    socials,
+  });
+  const next = parsed.success ? parsed.data : { ...DEFAULT_SITE_SETTINGS };
+
   await db
     .insert(settingsTable)
     .values({ key: SITE_KEY, value: next })
