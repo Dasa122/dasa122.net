@@ -9,7 +9,7 @@ export default defineConfig({
       router: {
         // `admin-guard` is a plain module beside the admin routes, not a route
         // file, so the generator must skip it.
-        routeFileIgnorePattern: "\\.test\\.|admin-guard",
+        routeFileIgnorePattern: "\\.test\\.|^admin-guard\\.ts$",
       },
     }),
     viteReact(),

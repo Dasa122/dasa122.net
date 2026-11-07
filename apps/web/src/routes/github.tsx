@@ -45,7 +45,7 @@ function NotSynced() {
 }
 
 /**
- * The only page that uses the terminal / data-panel vocabulary: four panels
+ * The public page that uses the terminal / data-panel vocabulary: four panels
  * for the repositories, languages, commits, and daily activity.
  */
 export function GitHubPage() {

@@ -2,27 +2,10 @@ import { Rule, Section } from "@dasa122/ui";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { AdminNav } from "../components/admin-nav";
 import { adminStatsOptions } from "../utils/admin-stats";
-import { adminRedirectTarget } from "./admin/admin-guard";
+import { adminRedirectTarget, classifyAdminError } from "./admin/admin-guard";
 
 const frame = "mx-auto w-full max-w-[80rem] px-6 md:px-10";
 const heading = "text-3xl leading-tight tracking-[-0.01em] md:text-4xl";
-
-function isForbidden(error: unknown): boolean {
-  return hasCode(error, "FORBIDDEN");
-}
-
-function isUnauthorized(error: unknown): boolean {
-  return hasCode(error, "UNAUTHORIZED");
-}
-
-function hasCode(error: unknown, code: string): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code?: unknown }).code === code
-  );
-}
 
 /**
  * The layout for every `/admin` route. It is not a page: the dashboard and the
@@ -37,16 +20,20 @@ function hasCode(error: unknown, code: string): boolean {
 export const Route = createFileRoute("/admin")({
   beforeLoad: async ({ context, location }) => {
     try {
-      await context.queryClient.ensureQueryData({
+      // `fetchQuery` refetches unconditionally, so the gate never trusts a
+      // cached admin result (e.g. data left by a previous admin session).
+      await context.queryClient.fetchQuery({
         ...adminStatsOptions,
         retry: false,
+        staleTime: 0,
       });
       return { forbidden: false };
     } catch (error) {
-      if (isForbidden(error)) {
+      const kind = classifyAdminError(error);
+      if (kind === "forbidden") {
         return { forbidden: true };
       }
-      if (isUnauthorized(error)) {
+      if (kind === "unauthorized") {
         // `href` + `reloadDocument` makes this a full-document navigation to
         // the API route rather than a router navigation to a page that does
         // not exist in the route tree.
