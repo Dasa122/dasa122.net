@@ -288,20 +288,48 @@ export async function syncGitHub(options: {
     return { created, error: null, skipped, updated };
   } catch (error) {
     const message = String(error).slice(0, 500);
-    await writeSyncState("error", message);
+    try {
+      await writeSyncState("error", message);
+    } catch (stateError) {
+      // The database is unavailable; the caller must still get the documented
+      // result shape instead of a rejection.
+      logger.warn({ err: stateError }, "github sync state write failed");
+    }
     return { created: 0, error: message, skipped: 0, updated: 0 };
   }
 }
 
 /**
- * Runs one sync immediately and then on the configured interval. The timer is
- * unref'd so it never keeps the process alive, and tests never schedule.
+ * Whether the last recorded run is old enough for a boot-time sync. A missing
+ * or stale `lastRunAt` is due, so a fresh deploy and a long outage both recover
+ * immediately; a recent run is skipped so a crash loop cannot burn the
+ * unauthenticated hourly GitHub budget.
+ */
+async function isBootSyncDue(intervalMs: number): Promise<boolean> {
+  const [row] = await db
+    .select({ lastRunAt: syncStateTable.lastRunAt })
+    .from(syncStateTable)
+    .where(eq(syncStateTable.source, GITHUB_SOURCE))
+    .limit(1);
+  const lastRunAt = row?.lastRunAt;
+  if (lastRunAt === null || lastRunAt === undefined) {
+    return true;
+  }
+  return Date.now() - lastRunAt.getTime() >= intervalMs;
+}
+
+/**
+ * Runs a sync on boot only when the last recorded run is older than the
+ * interval, then every interval after that. The boot gate keeps a crash loop or
+ * `bun --watch` from spending the GitHub rate limit; the timer is unref'd so it
+ * never keeps the process alive, and tests never schedule.
  */
 export function startGitHubScheduler(intervalMinutes: number): void {
   if (env.nodeEnv === "test") {
     return;
   }
 
+  const intervalMs = intervalMinutes * 60_000;
   const run = () => {
     syncGitHub({
       token: env.github.token,
@@ -311,7 +339,15 @@ export function startGitHubScheduler(intervalMinutes: number): void {
     });
   };
 
-  run();
-  const timer = setInterval(run, intervalMinutes * 60_000);
+  void (async () => {
+    try {
+      if (await isBootSyncDue(intervalMs)) {
+        run();
+      }
+    } catch (error) {
+      logger.warn({ err: error }, "github sync due check failed");
+    }
+  })();
+  const timer = setInterval(run, intervalMs);
   timer.unref();
 }

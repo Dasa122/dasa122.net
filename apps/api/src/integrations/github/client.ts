@@ -1,5 +1,6 @@
 const GITHUB_API = "https://api.github.com";
 const PER_PAGE = 100;
+const REQUEST_TIMEOUT_MS = 15_000;
 
 /** A public event from `GET /users/:username/events/public`. */
 export type GitHubEvent = {
@@ -36,15 +37,30 @@ function requestHeaders(token: string | undefined): Record<string, string> {
 }
 
 /**
- * Fetches one GitHub JSON document. A non-2xx response throws the same generic
- * error as a transport failure, so callers never leak a provider message.
+ * Fetches one GitHub JSON document. A non-2xx response, a transport failure or
+ * a request that exceeds the timeout throws the same generic error, so callers
+ * never leak a provider message and a hung request cannot stack up runs.
  */
 async function getJson(
   url: string,
   token: string | undefined,
   fetchImpl: typeof fetch,
 ): Promise<unknown> {
-  const response = await fetchImpl(url, { headers: requestHeaders(token) });
+  let response: Response;
+  try {
+    response = await fetchImpl(url, {
+      headers: requestHeaders(token),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    });
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      (error.name === "TimeoutError" || error.name === "AbortError")
+    ) {
+      throw new Error("github_api_error");
+    }
+    throw error;
+  }
   if (!response.ok) {
     throw new Error("github_api_error");
   }

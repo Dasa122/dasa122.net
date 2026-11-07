@@ -12,6 +12,7 @@ import {
   settingsTable,
   syncStateTable,
 } from "../../database/schema";
+import { env } from "../../env";
 import { createTestDb, migrateTestDb, resetTables } from "../../test/helpers";
 import { startGitHubScheduler, syncGitHub } from "./sync";
 
@@ -64,6 +65,24 @@ const stubFetch = (events: unknown[], repos: unknown[] = []): FetchImpl =>
 const failingFetch = (async () => {
   throw new Error("network down");
 }) as unknown as FetchImpl;
+
+/** A stub that records which endpoint a scheduler-triggered sync hits. */
+function recordingFetch(events: unknown[] = []) {
+  const calls = { events: 0, repos: 0 };
+  const impl = (async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (url.includes("/events/public")) {
+      calls.events += 1;
+      return jsonResponse(events);
+    }
+    if (url.includes("/repos")) {
+      calls.repos += 1;
+      return jsonResponse([]);
+    }
+    return jsonResponse([]);
+  }) as unknown as FetchImpl;
+  return { calls, impl };
+}
 
 function push(id: string, size: number, createdAt: string) {
   return {
@@ -303,6 +322,25 @@ describe("syncGitHub", () => {
     expect(state?.lastError).toBe("Error: github_api_error");
   });
 
+  test("a timed-out request surfaces as the generic github_api_error", async () => {
+    let sawSignal = false;
+    const timeoutFetch = (async (
+      _input: RequestInfo | URL,
+      init?: RequestInit,
+    ) => {
+      sawSignal = init?.signal instanceof AbortSignal;
+      throw new DOMException("The operation timed out.", "TimeoutError");
+    }) as unknown as FetchImpl;
+
+    const result = await syncGitHub({
+      fetchImpl: timeoutFetch,
+      username: "Dasa122",
+    });
+
+    expect(sawSignal).toBe(true);
+    expect(result.error).toBe("Error: github_api_error");
+  });
+
   test("the scheduler does not schedule under NODE_ENV=test", () => {
     const original = globalThis.fetch;
     let called = false;
@@ -318,5 +356,60 @@ describe("syncGitHub", () => {
     }
 
     expect(called).toBe(false);
+  });
+
+  test("the boot sync runs only when the last run is older than the interval", async () => {
+    const originalNodeEnv = env.nodeEnv;
+    const originalFetch = globalThis.fetch;
+    env.nodeEnv = "development";
+
+    try {
+      // A run inside the interval is skipped, so a restart cannot spend budget.
+      await testDb.insert(syncStateTable).values({
+        lastRunAt: new Date(),
+        lastStatus: "ok",
+        source: "github",
+      });
+      const recent = recordingFetch();
+      globalThis.fetch = recent.impl;
+
+      startGitHubScheduler(60);
+      await Bun.sleep(250);
+
+      expect(recent.calls.events).toBe(0);
+
+      // Two intervals later the same boot recovers once.
+      await resetTables(testDb);
+      await testDb.insert(syncStateTable).values({
+        lastRunAt: new Date(Date.now() - 2 * 60 * 60_000),
+        lastStatus: "ok",
+        source: "github",
+      });
+      const stale = recordingFetch();
+      globalThis.fetch = stale.impl;
+
+      startGitHubScheduler(60);
+      for (
+        let attempt = 0;
+        attempt < 100 && stale.calls.events === 0;
+        attempt++
+      ) {
+        await Bun.sleep(20);
+      }
+
+      expect(stale.calls.events).toBe(1);
+
+      // Let the fire-and-forget sync finish before the file tears down.
+      for (let attempt = 0; attempt < 100; attempt++) {
+        const [state] = await testDb.select().from(syncStateTable);
+        if (state?.lastStatus === "ok") {
+          break;
+        }
+        await Bun.sleep(20);
+      }
+    } finally {
+      globalThis.fetch = originalFetch;
+      env.nodeEnv = originalNodeEnv;
+    }
   });
 });

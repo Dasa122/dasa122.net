@@ -204,6 +204,63 @@ describe("adminGithub", () => {
     expect(fetchCalls).toBe(0);
   });
 
+  test("the sync endpoint is gated", async () => {
+    const { response } = await call("/api/admin/github/sync", {
+      body: JSON.stringify({}),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    });
+    expect(response?.status).toBe(401);
+  });
+
+  test("the sync endpoint runs a sync and returns its counts", async () => {
+    const original = globalThis.fetch;
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      const url = String(input);
+      const body = url.includes("/events/public")
+        ? [
+            {
+              actor: { login: "Dasa122" },
+              created_at: "2026-11-06T12:00:00Z",
+              id: "9001",
+              payload: {
+                commits: [{ message: "Sync endpoint", sha: "abc" }],
+                ref: "refs/heads/main",
+              },
+              repo: { name: "Dasa122/dasa122.net" },
+              type: "PushEvent",
+            },
+          ]
+        : [];
+      return new Response(JSON.stringify(body), {
+        headers: { "content-type": "application/json" },
+        status: 200,
+      });
+    }) as unknown as typeof fetch;
+
+    try {
+      const { response } = await call(
+        "/api/admin/github/sync",
+        {
+          body: JSON.stringify({}),
+          headers: { "content-type": "application/json" },
+          method: "POST",
+        },
+        adminSession,
+      );
+
+      expect(response?.status).toBe(200);
+      expect(await response?.json()).toEqual({
+        created: 1,
+        error: null,
+        skipped: 0,
+        updated: 0,
+      });
+    } finally {
+      globalThis.fetch = original;
+    }
+  });
+
   test("the featured endpoint persists the full new list", async () => {
     const { response } = await call(
       "/api/admin/github/featured",
