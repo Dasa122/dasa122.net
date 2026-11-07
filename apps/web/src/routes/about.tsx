@@ -72,21 +72,49 @@ export function AboutPage() {
   );
 }
 
+/**
+ * Social links are free-text settings, so a scheme-less value would otherwise
+ * resolve as a relative path. Accept only http(s), drop any other scheme, and
+ * treat everything else as a bare host.
+ */
+function toHref(value: string | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+  if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) {
+    return null;
+  }
+  return `https://${trimmed.replace(/^\/+/, "")}`;
+}
+
+function toLink(value: string | undefined, label: string): ElsewhereLink[] {
+  const href = toHref(value);
+  return href ? [{ href, label }] : [];
+}
+
 function AboutContent({ settings }: { settings: Settings }) {
-  const elsewhere: ElsewhereLink[] = [
-    settings.socials.github
-      ? { href: settings.socials.github, label: "GitHub" }
-      : settings.githubUsername
-        ? {
-            href: `https://github.com/${settings.githubUsername}`,
+  const githubLinks: ElsewhereLink[] = settings.socials.github
+    ? toLink(settings.socials.github, "GitHub")
+    : settings.githubUsername
+      ? [
+          {
+            href: `https://github.com/${encodeURIComponent(settings.githubUsername)}`,
             label: "GitHub",
-          }
-        : null,
-    settings.socials.linkedin
-      ? { href: settings.socials.linkedin, label: "LinkedIn" }
-      : null,
-    settings.socials.rss ? { href: settings.socials.rss, label: "RSS" } : null,
-  ].filter((link): link is ElsewhereLink => link !== null);
+          },
+        ]
+      : [];
+  const elsewhere: ElsewhereLink[] = [
+    ...githubLinks,
+    ...toLink(settings.socials.linkedin, "LinkedIn"),
+    ...toLink(settings.socials.rss, "RSS"),
+  ];
 
   return (
     <>
@@ -128,11 +156,17 @@ function AboutContent({ settings }: { settings: Settings }) {
         <div className="col-span-12 space-y-10 md:col-span-7 md:col-start-6">
           <section>
             <h2 className={label}>CURRENTLY</h2>
-            <ul className="mt-4 space-y-2 text-ink">
-              {settings.enabledSources.map((source) => (
-                <li key={source}>{sourceLabels[source]}</li>
-              ))}
-            </ul>
+            {settings.enabledSources.length > 0 ? (
+              <ul className="mt-4 space-y-2 text-ink">
+                {settings.enabledSources.map((source) => (
+                  <li key={source}>{sourceLabels[source]}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-4 font-mono text-[0.75rem] text-muted">
+                Nothing published right now.
+              </p>
+            )}
           </section>
 
           <section>
