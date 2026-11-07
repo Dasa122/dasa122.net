@@ -228,6 +228,19 @@ describe("posts service", () => {
     expect(cleared.slug).toBeNull();
   });
 
+  test("patching a missing post with a taken slug is NOT_FOUND", async () => {
+    await adminCreatePost({ ...ownPost, slug: "taken" });
+
+    await expect(
+      Promise.resolve(
+        adminUpdatePost("00000000-0000-4000-8000-000000000000", {
+          id: "00000000-0000-4000-8000-000000000000",
+          slug: "taken",
+        }),
+      ),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
   test("patching only a LinkedIn permalink on an own post keeps metadata null", async () => {
     const created = await adminCreatePost(ownPost);
 

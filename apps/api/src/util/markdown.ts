@@ -23,9 +23,13 @@ const BLOCKED_ELEMENT =
 
 /** Event-handler attributes are removed before author HTML is escaped. */
 const EVENT_HANDLER_ATTRIBUTE =
-  /\son[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi;
+  /(?:^|[\s/"'])on[a-z-]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>&]+)/gi;
 
-const URL_ATTRIBUTE = /\b(href|src)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi;
+const URL_ATTRIBUTE =
+  /(^|\s)(href|src)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi;
+
+/** Rendered code is displayed verbatim and must not be altered by sanitising. */
+const CODE_REGION = /(<pre\b[\s\S]*?<\/pre>|<code\b[\s\S]*?<\/code>)/gi;
 
 const NAMED_REFERENCES: Record<string, string> = {
   amp: "&",
@@ -120,6 +124,7 @@ function sanitizeUrlAttributes(html: string): string {
       URL_ATTRIBUTE,
       (
         _match,
+        boundary: string,
         name: string,
         doubleQuoted?: string,
         singleQuoted?: string,
@@ -127,10 +132,24 @@ function sanitizeUrlAttributes(html: string): string {
       ) => {
         const value = doubleQuoted ?? singleQuoted ?? unquoted ?? "";
         const safe = isSafeUrl(value) ? value : "#";
-        return `${name}="${safe.replace(/"/g, "&quot;")}"`;
+        return `${boundary}${name}="${safe.replace(/"/g, "&quot;")}"`;
       },
     ),
   );
+}
+
+/**
+ * Layer 2: removes `on*` attributes from everything except rendered code
+ * regions. Escaped author HTML outside code is covered too, so a raw-block
+ * lexer state cannot hide the literal attribute name in visible text.
+ */
+function stripEventHandlers(html: string): string {
+  return html
+    .split(CODE_REGION)
+    .map((part, index) =>
+      index % 2 === 1 ? part : part.replace(EVENT_HANDLER_ATTRIBUTE, ""),
+    )
+    .join("");
 }
 
 /**
@@ -148,6 +167,7 @@ export function sanitizeHtml(html: string): string {
     );
     sanitized = sanitized.replace(new RegExp(`<${tag}\\b[^>]*\\/?>`, "gi"), "");
   }
+  sanitized = stripEventHandlers(sanitized);
   return sanitizeUrlAttributes(sanitized);
 }
 
@@ -194,6 +214,12 @@ const markdown = new Marked({
     },
     html(token) {
       return renderAuthorHtml(token.text);
+    },
+    text(token) {
+      if ("tokens" in token && token.tokens) {
+        return this.parser.parseInline(token.tokens);
+      }
+      return escapeHtmlText(token.text);
     },
   },
   walkTokens: async (token) => {

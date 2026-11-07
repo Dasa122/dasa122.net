@@ -35,6 +35,20 @@ describe("sanitizeHtml", () => {
       "javascript:",
     );
   });
+
+  test("strips event-handler attributes as defence in depth", () => {
+    const html = sanitizeHtml('<img src="x" onerror="alert(1)" onload="x">');
+    expect(html).not.toContain("onerror");
+    expect(html).not.toContain("onload");
+  });
+
+  test("does not rewrite data-src or data-href attributes", () => {
+    const html = sanitizeHtml(
+      '<img data-src="javascript:alert(1)" data-href="javascript:x">',
+    );
+    expect(html).toContain('data-src="javascript:alert(1)"');
+    expect(html).toContain('data-href="javascript:x"');
+  });
 });
 
 describe("renderMarkdown", () => {
@@ -104,5 +118,33 @@ describe("renderMarkdown", () => {
     expect(html).toContain("<em>em</em>");
     expect(html).toContain('href="https://example.com"');
     expect(html).toContain("<code>inline</code>");
+  });
+
+  test("escapes text following an inline code tag", async () => {
+    const html = await renderMarkdown(
+      "hello <code> <img/src=x onerror=alert(1)>",
+    );
+    expect(html).not.toContain("onerror");
+  });
+
+  test("escapes text following an inline kbd tag", async () => {
+    const html = await renderMarkdown("hello <kbd> <svg/onload=alert(1)>");
+    expect(html).not.toContain("onload");
+  });
+
+  test("escapes text following an inline pre tag", async () => {
+    const html = await renderMarkdown(
+      "hello <pre> <img src=x onerror=alert(1)>",
+    );
+    expect(html).not.toContain("onerror");
+  });
+
+  test("keeps nested inline tokens intact", async () => {
+    const html = await renderMarkdown(
+      "**bold** and `code` and <https://example.com>",
+    );
+    expect(html).toContain("<strong>");
+    expect(html).toContain("<code>");
+    expect(html).toContain('href="https://example.com"');
   });
 });

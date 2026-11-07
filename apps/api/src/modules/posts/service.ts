@@ -189,6 +189,10 @@ export async function adminUpdatePost(
   }
   if (input.slug !== undefined) {
     if (input.slug !== null) {
+      const existing = await findPostByIdRepo(db, id);
+      if (existing === null) {
+        throw notFound();
+      }
       await assertSlugAvailable(input.slug, id);
     }
     patch.slug = input.slug;
