@@ -1,6 +1,6 @@
 import { navigation } from "../lib/navigation";
 
-export function SiteHeader() {
+export function SiteHeader({ name }: { name: string }) {
   return (
     <header className="border-b border-[var(--hairline)]">
       <div className="mx-auto grid w-full max-w-[80rem] grid-cols-12 items-baseline gap-x-6 px-6 py-5 md:px-10">
@@ -8,7 +8,7 @@ export function SiteHeader() {
           className="col-span-7 font-display text-2xl leading-none tracking-[-0.01em] md:col-span-3"
           href="/"
         >
-          Dasa122
+          {name}
         </a>
         <nav
           aria-label="Primary"

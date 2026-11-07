@@ -96,6 +96,24 @@ describe("contract integrity", () => {
     expect(duplicates).toEqual([]);
   });
 
+  test("every (method, path) pair is unique across the whole contract", () => {
+    const owners = new Map<string, string[]>();
+    for (const { leaf, path } of leaves) {
+      const route = leaf["~orpc"].route;
+      if (!isNonEmptyString(route?.method) || !isNonEmptyString(route?.path)) {
+        continue;
+      }
+      const key = `${route.method.toUpperCase()} ${route.path}`;
+      owners.set(key, [...(owners.get(key) ?? []), path]);
+    }
+
+    const duplicates = [...owners.entries()]
+      .filter(([, paths]) => paths.length > 1)
+      .map(([key, paths]) => `${key}: ${paths.join(", ")}`);
+
+    expect(duplicates).toEqual([]);
+  });
+
   test("the root error map reaches every leaf", () => {
     const codes = Object.keys(apiErrors) as Array<keyof typeof apiErrors>;
 

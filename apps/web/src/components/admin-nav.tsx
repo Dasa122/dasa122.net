@@ -37,9 +37,11 @@ export function AdminNav() {
       <span aria-hidden="true" className="text-rule">
         ·
       </span>
-      <a className={link} href="/api/auth/logout">
-        Sign out
-      </a>
+      <form action="/api/auth/logout" method="post">
+        <button className={`${link} cursor-pointer`} type="submit">
+          Sign out
+        </button>
+      </form>
     </nav>
   );
 }

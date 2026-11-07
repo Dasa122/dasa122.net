@@ -1,6 +1,6 @@
 import type { postSourceSchema } from "@dasa122/contract";
 import { Button, Rule, Section } from "@dasa122/ui";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Fragment, type ReactNode } from "react";
 import { PostRow } from "../../components/post-row";
@@ -55,19 +55,26 @@ function parseSearch(search: Record<string, unknown>): NewsSearch {
   };
 }
 
-function feedOptions(search: NewsSearch) {
+function feedOptions(search: NewsSearch, enabledSources: PostSource[]) {
   return orpc.posts.list.infiniteOptions({
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     initialPageParam: search.cursor ?? null,
     input: (cursor) => ({
       cursor: cursor ?? undefined,
       limit: PAGE_SIZE,
-      sources: search.source ? [search.source] : undefined,
+      sources:
+        search.source !== undefined
+          ? [search.source]
+          : enabledSources.length > 0
+            ? enabledSources
+            : undefined,
       tag: search.tag,
       year: search.year,
     }),
   });
 }
+
+const siteOptions = orpc.site.get.queryOptions({ input: {} });
 
 export const Route = createFileRoute("/news/")({
   component: NewsPage,
@@ -85,8 +92,12 @@ export const Route = createFileRoute("/news/")({
       ],
     };
   },
-  loader: ({ context, deps }) =>
-    context.queryClient.prefetchInfiniteQuery(feedOptions(deps)),
+  loader: async ({ context, deps }) => {
+    const settings = await context.queryClient.ensureQueryData(siteOptions);
+    await context.queryClient.prefetchInfiniteQuery(
+      feedOptions(deps, settings.enabledSources),
+    );
+  },
   loaderDeps: ({ search }) => search,
   validateSearch: parseSearch,
 });
@@ -122,7 +133,10 @@ function FilterLink({
 
 function NewsPage() {
   const search = Route.useSearch();
-  const feed = useInfiniteQuery(feedOptions(search));
+  const site = useQuery(siteOptions);
+  const feed = useInfiniteQuery(
+    feedOptions(search, site.data?.enabledSources ?? []),
+  );
   const posts = feed.data?.pages.flatMap((page) => page.items) ?? [];
 
   return (

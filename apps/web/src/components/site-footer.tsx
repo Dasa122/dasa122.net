@@ -1,11 +1,11 @@
 import { navigation } from "../lib/navigation";
 
-export function SiteFooter() {
+export function SiteFooter({ name }: { name: string }) {
   return (
     <footer className="border-t border-[var(--hairline)]">
       <div className="mx-auto grid w-full max-w-[80rem] grid-cols-12 items-baseline gap-x-6 gap-y-3 px-6 py-10 md:px-10">
         <p className="col-span-12 font-mono text-[0.625rem] uppercase tracking-[0.14em] text-muted tabular-nums md:col-span-3">
-          © 2026 Dasa122
+          © 2026 {name}
         </p>
         <nav
           aria-label="Footer"

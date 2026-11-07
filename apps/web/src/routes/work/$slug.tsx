@@ -1,7 +1,7 @@
 import { buttonClassName, Rule, Section, Tag } from "@dasa122/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { canonicalOrigin } from "../../utils/canonical";
+import { absoluteUrl, canonicalOrigin } from "../../utils/canonical";
 import { isNotFound } from "../../utils/errors";
 import { type api, orpc } from "../../utils/orpc";
 
@@ -28,6 +28,9 @@ export const Route = createFileRoute("/work/$slug")({
         { content: project.summary, property: "og:description" },
         { content: "article", property: "og:type" },
         { content: url, property: "og:url" },
+        ...(project.coverImage
+          ? [{ content: absoluteUrl(project.coverImage), property: "og:image" }]
+          : []),
       ],
     };
   },

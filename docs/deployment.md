@@ -65,12 +65,6 @@ API and everything else to the web app.
 
 ## 4. Environment variables
 
-Generate a session secret once and reuse it:
-
-```bash
-openssl rand -base64 32
-```
-
 **api**
 
 ```
@@ -80,7 +74,6 @@ AUTHENTIK_ISSUER=https://auth.dasa122.net/application/o/dasa122-net/
 AUTHENTIK_CLIENT_ID=<client-id>
 AUTHENTIK_CLIENT_SECRET=<client-secret>
 AUTHENTIK_ADMIN_GROUP=dasa122.net-admin
-SESSION_SECRET=<openssl-output>
 GITHUB_TOKEN=<fine-grained-pat>
 GITHUB_USERNAME=Dasa122
 GITHUB_SYNC_INTERVAL_MINUTES=15

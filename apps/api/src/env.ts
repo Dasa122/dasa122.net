@@ -39,7 +39,6 @@ const schema = z
     NODE_ENV: z.string().trim().min(1).default("development"),
     PORT: z.coerce.number().int().min(1).max(65_535).default(3001),
     PUBLIC_ORIGIN: z.url(),
-    SESSION_SECRET: z.string().min(32),
     SESSION_TTL_DAYS: z.coerce.number().int().positive().default(30),
   })
   .transform((raw) => {
@@ -75,7 +74,6 @@ const schema = z
       nodeEnv: raw.NODE_ENV,
       port: raw.PORT,
       publicOrigin: new URL(raw.PUBLIC_ORIGIN).origin,
-      sessionSecret: raw.SESSION_SECRET,
       sessionTtlDays: raw.SESSION_TTL_DAYS,
     };
   });

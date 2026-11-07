@@ -53,6 +53,20 @@ function json(status: number, body: unknown): Response {
   });
 }
 
+/** Logout mutates state, so only a POST is accepted. */
+function methodNotAllowed(): Response {
+  return new Response(
+    JSON.stringify({
+      error: "method_not_allowed",
+      message: "Method not allowed",
+    }),
+    {
+      headers: { allow: "POST", "content-type": "application/json" },
+      status: 405,
+    },
+  );
+}
+
 function redirect(location: string, cookies: string[] = []): Response {
   const headers = new Headers({ location });
   for (const cookie of cookies) {
@@ -341,6 +355,9 @@ export async function handleAuthRoutes(
     case "/api/auth/callback":
       return handleCallback(request, url);
     case "/api/auth/logout":
+      if (request.method !== "POST") {
+        return methodNotAllowed();
+      }
       return handleLogout(request);
     case "/api/auth/session":
       return handleSession(request);

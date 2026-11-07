@@ -52,6 +52,7 @@ function AdminSettings() {
     ? {
         accent: data.accent ?? "",
         description: data.description,
+        enabledSources: data.enabledSources,
         githubUsername: data.githubUsername ?? "",
         name: data.name,
         ogImage: data.ogImage ?? "",
@@ -64,6 +65,7 @@ function AdminSettings() {
     update.mutate({
       accent: blankToNull(values.accent),
       description: values.description,
+      enabledSources: values.enabledSources,
       githubUsername: blankToNull(values.githubUsername),
       name: values.name,
       ogImage: blankToNull(values.ogImage),

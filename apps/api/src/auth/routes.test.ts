@@ -110,14 +110,15 @@ afterAll(() => {
 async function call(
   url: URL,
   cookie?: string,
+  method = "GET",
 ): Promise<{ lines: string[]; response: Response }> {
   const spy = spyOn(process.stdout, "write").mockImplementation(() => true);
   try {
     const response = await handleAuthRoutes(
-      new Request(
-        url,
-        cookie === undefined ? undefined : { headers: { cookie } },
-      ),
+      new Request(url, {
+        headers: cookie === undefined ? undefined : { cookie },
+        method,
+      }),
       url,
     );
     return {
@@ -221,12 +222,22 @@ describe("handleAuthRoutes error normalisation", () => {
     }
   });
 
+  test("a GET on logout is 405 and revokes nothing", async () => {
+    const { response } = await call(
+      new URL("https://dasa122.net/api/auth/logout"),
+    );
+
+    expect(response.status).toBe(405);
+    expect(response.headers.get("allow")).toBe("POST");
+  });
+
   test("a session revoke failure on logout is 503 session_unavailable", async () => {
     revokeFails = true;
     try {
       const { response, lines } = await call(
         new URL("https://dasa122.net/api/auth/logout"),
         "dasa_session=abc",
+        "POST",
       );
 
       expect(response.status).toBe(503);

@@ -8,5 +8,4 @@ process.env.DATABASE_URL ??=
   process.env.TEST_DATABASE_URL ??
   "postgresql://postgres:postgres@localhost:5432/dasa122_net_test";
 process.env.PUBLIC_ORIGIN ??= "http://localhost:3001";
-process.env.SESSION_SECRET ??= "test-session-secret-0123456789abcdef";
 process.env.AUTHENTIK_ISSUER ??= "https://auth.dasa122.net/application/o/test/";

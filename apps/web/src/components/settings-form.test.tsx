@@ -9,6 +9,7 @@ describe("SettingsForm", () => {
         initial={{
           accent: "",
           description: "",
+          enabledSources: ["own", "github", "linkedin"],
           githubUsername: "Dasa122",
           name: "Dasa122",
           ogImage: "",

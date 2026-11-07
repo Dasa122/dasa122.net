@@ -1,10 +1,14 @@
+import type { postSourceSchema } from "@dasa122/contract";
 import { Button } from "@dasa122/ui";
 import { useState } from "react";
+
+type PostSource = ReturnType<typeof postSourceSchema.parse>;
 
 /** The settings the form edits, with blank strings standing in for nulls. */
 export type SettingsFormValues = {
   accent: string;
   description: string;
+  enabledSources: PostSource[];
   githubUsername: string;
   name: string;
   ogImage: string;
@@ -16,6 +20,12 @@ export type SettingsFormValues = {
   };
   tagline: string;
 };
+
+const SOURCES: { label: string; value: PostSource }[] = [
+  { label: "Notes", value: "own" },
+  { label: "GitHub", value: "github" },
+  { label: "LinkedIn", value: "linkedin" },
+];
 
 const label =
   "block font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-muted";
@@ -47,6 +57,7 @@ export function SettingsForm({
   const [description, setDescription] = useState(initial.description);
   const [ogImage, setOgImage] = useState(initial.ogImage);
   const [accent, setAccent] = useState(initial.accent);
+  const [enabledSources, setEnabledSources] = useState(initial.enabledSources);
   const [githubUsername, setGithubUsername] = useState(initial.githubUsername);
   const [github, setGithub] = useState(initial.socials.github ?? "");
   const [linkedin, setLinkedin] = useState(initial.socials.linkedin ?? "");
@@ -56,6 +67,7 @@ export function SettingsForm({
   const values = (): SettingsFormValues => ({
     accent,
     description,
+    enabledSources,
     githubUsername,
     name: name.trim(),
     ogImage,
@@ -152,6 +164,34 @@ export function SettingsForm({
           />
         </div>
       </div>
+
+      <fieldset className="mt-12">
+        <legend className={group}>Feed sources</legend>
+        <p className="mt-2 font-mono text-[0.6875rem] text-muted">
+          The feed shows these sources by default.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-x-6 gap-y-3">
+          {SOURCES.map((option) => (
+            <label
+              className="flex items-baseline gap-2 text-base text-ink"
+              key={option.value}
+            >
+              <input
+                checked={enabledSources.includes(option.value)}
+                onChange={(event) =>
+                  setEnabledSources((current) =>
+                    event.target.checked
+                      ? [...current, option.value]
+                      : current.filter((source) => source !== option.value),
+                  )
+                }
+                type="checkbox"
+              />
+              {option.label}
+            </label>
+          ))}
+        </div>
+      </fieldset>
 
       <fieldset className="mt-12">
         <legend className={group}>Social links</legend>
