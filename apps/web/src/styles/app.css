@@ -273,6 +273,14 @@
   }
 }
 
+/* Between md and ~52rem the primary nav wraps to a second line, which makes
+   the header taller; the kicker's offset follows it. */
+@media (width >= 48rem) and (width < 52rem) {
+  .section-kicker {
+    top: 5.5rem;
+  }
+}
+
 /* A view-timeline entrance, opted into by the hook only where it is
    supported. The attribute is set from an effect, so no JavaScript means no
    [data-reveal] and therefore no hidden content. */
@@ -353,5 +361,65 @@
   .row-lift:focus-within {
     translate: none;
     box-shadow: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Small-screen navigation. The inline nav is display:none below md, so the
+   panel takes over; both carry the same "Primary" label but only one is ever
+   in the accessibility tree.
+   --------------------------------------------------------------------------- */
+
+.site-menu {
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  background: var(--color-paper);
+  border-bottom: 1px solid var(--hairline);
+  visibility: hidden;
+  opacity: 0;
+  translate: 0 -4px;
+  transition:
+    opacity 180ms cubic-bezier(0.2, 0, 0, 1),
+    translate 180ms cubic-bezier(0.2, 0, 0, 1),
+    visibility 180ms;
+}
+
+.site-menu[data-open="true"] {
+  visibility: visible;
+  opacity: 1;
+  translate: none;
+}
+
+@media (width >= 48rem) {
+  .site-menu {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-menu {
+    transition: none;
+    translate: none;
+  }
+}
+
+/* Plain links for a phone with JavaScript disabled, where the inline nav is
+   display:none and the panel cannot open. */
+.fallback-nav {
+  display: none;
+}
+
+@media (width < 48rem) {
+  .fallback-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+    border-top: 1px solid var(--hairline);
+    padding: 0.75rem 1.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
   }
 }
