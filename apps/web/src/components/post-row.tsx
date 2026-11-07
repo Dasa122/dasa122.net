@@ -25,12 +25,12 @@ export function PostRow({ post }: { post: PostSummary }) {
     .join(" · ");
 
   return (
-    <article className="flex flex-wrap items-baseline gap-x-8 gap-y-2 py-5">
+    <article className="group relative -mx-3 flex flex-wrap items-baseline gap-x-8 gap-y-2 rounded-[var(--radius-md)] px-3 py-5 pr-10 transition-[background-color,transform] duration-200 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-[var(--color-surface-2)] active:scale-[0.998]">
       <div className="w-20 shrink-0">
         <SourceBadge source={post.source} />
       </div>
       <div className="min-w-0 flex-1">
-        <h3 className="text-xl leading-snug tracking-[-0.01em] md:text-2xl">
+        <h3 className="text-xl leading-snug tracking-[-0.01em] transition-transform duration-200 group-hover:translate-x-1 md:text-2xl">
           {title}
         </h3>
         {post.tags.length > 0 && (
@@ -42,6 +42,12 @@ export function PostRow({ post }: { post: PostSummary }) {
         )}
       </div>
       <Meta>{meta}</Meta>
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ember-text opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+      >
+        ↗
+      </span>
     </article>
   );
 }
