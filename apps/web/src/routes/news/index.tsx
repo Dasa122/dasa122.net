@@ -191,7 +191,7 @@ function NewsPage() {
                 Loading notes…
               </p>
             )}
-            {feed.isError && (
+            {feed.isError && posts.length === 0 && (
               <p className="py-5 font-mono text-[0.75rem] text-ember-text">
                 Could not load the feed.
               </p>
