@@ -4,8 +4,13 @@
     "react-dom": "catalog:"
   },
   "devDependencies": {
+    "@types/bun": "catalog:",
     "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
     "typescript": "catalog:"
+  },
+  "exports": {
+    ".": "./src/index.ts"
   },
   "name": "@dasa122/ui",
   "private": true,
