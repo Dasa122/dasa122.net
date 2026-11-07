@@ -21,9 +21,16 @@ const BLOCKED_TAGS = [
 const BLOCKED_ELEMENT =
   /^<\s*\/?\s*(?:script|style|iframe|object|embed|form)\b/i;
 
-/** Event-handler attributes are removed before author HTML is escaped. */
+/**
+ * Event-handler attributes are removed before author HTML is escaped. Real
+ * handler attributes are whitespace-separated (marked's link/image renderers
+ * always emit them that way). `/` is included so escaped author text such as
+ * `<svg/onload=...>` also loses the literal handler name. Quote boundaries are
+ * deliberately excluded: `alt="onerror=1"` and `title="onerror=1"` must keep
+ * their value.
+ */
 const EVENT_HANDLER_ATTRIBUTE =
-  /(?:^|[\s/"'])on[a-z-]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>&]+)/gi;
+  /(^|[\s/])on[a-zA-Z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)/gi;
 
 const URL_ATTRIBUTE =
   /(^|\s)(href|src)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi;
@@ -44,11 +51,14 @@ const NAMED_REFERENCES: Record<string, string> = {
 
 function escapeHtmlText(value: string): string {
   return value
-    .replace(/&/g, "&amp;")
+    .replace(/&(?!#?[a-zA-Z0-9]+;)/g, "&amp;")
     .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+    .replace(/>/g, "&gt;");
+}
+
+/** Escaping for a value that lands inside a quoted attribute. */
+function escapeHtmlAttribute(value: string): string {
+  return escapeHtmlText(value).replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
 /** Decodes character references once, the way a browser parses an attribute. */
@@ -194,7 +204,7 @@ function renderPlainCode(token: Tokens.Code): string {
   const language = token.lang?.trim().split(/\s+/)[0];
   return language === undefined || language === ""
     ? `<pre><code>${escapeHtmlText(token.text)}</code></pre>`
-    : `<pre><code class="language-${escapeHtmlText(language)}">${escapeHtmlText(token.text)}</code></pre>`;
+    : `<pre><code class="language-${escapeHtmlAttribute(language)}">${escapeHtmlText(token.text)}</code></pre>`;
 }
 
 /**

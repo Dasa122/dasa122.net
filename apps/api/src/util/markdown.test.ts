@@ -124,11 +124,15 @@ describe("renderMarkdown", () => {
     const html = await renderMarkdown(
       "hello <code> <img/src=x onerror=alert(1)>",
     );
+    expect(html).toContain("&lt;img");
+    expect(html).not.toContain("<img");
     expect(html).not.toContain("onerror");
   });
 
   test("escapes text following an inline kbd tag", async () => {
     const html = await renderMarkdown("hello <kbd> <svg/onload=alert(1)>");
+    expect(html).toContain("&lt;svg");
+    expect(html).not.toContain("<svg");
     expect(html).not.toContain("onload");
   });
 
@@ -136,15 +140,35 @@ describe("renderMarkdown", () => {
     const html = await renderMarkdown(
       "hello <pre> <img src=x onerror=alert(1)>",
     );
+    expect(html).toContain("&lt;img");
+    expect(html).not.toContain("<img");
     expect(html).not.toContain("onerror");
+  });
+
+  test("escapes text following an inline script tag", async () => {
+    const html = await renderMarkdown(
+      "hello <script> <img src=x onerror=alert(1)>",
+    );
+    expect(html).not.toContain("onerror");
+    expect(html).not.toContain("<img");
   });
 
   test("keeps nested inline tokens intact", async () => {
     const html = await renderMarkdown(
       "**bold** and `code` and <https://example.com>",
     );
-    expect(html).toContain("<strong>");
-    expect(html).toContain("<code>");
+    expect(html).toContain("<strong>bold</strong>");
+    expect(html).toContain("<code>code</code>");
     expect(html).toContain('href="https://example.com"');
+  });
+
+  test("preserves a named character reference in prose", async () => {
+    const html = await renderMarkdown("A &mdash; B");
+    expect(html).not.toContain("&amp;mdash;");
+  });
+
+  test("keeps an alt attribute whose value starts with on", async () => {
+    const html = await renderMarkdown("![onerror=1](/x.png)");
+    expect(html).toContain("onerror=1");
   });
 });
