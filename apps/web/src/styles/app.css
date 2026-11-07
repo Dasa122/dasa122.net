@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Instrument Serif", Georgia, serif;
+  --font-sans:
+    "Instrument Sans Variable", "Instrument Sans", ui-sans-serif, system-ui,
+    sans-serif;
+  --font-mono:
+    "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
+
+  --color-paper: oklch(0.97 0.005 85);
+  --color-ink: oklch(0.18 0.01 60);
+  --color-rule: oklch(0.88 0.006 85);
+  --color-ember: oklch(0.58 0.17 45);
+  --color-muted: oklch(0.52 0.008 70);
+}
+
+:root {
+  color-scheme: light;
+  --surface: var(--color-paper);
+  --text: var(--color-ink);
+  --hairline: var(--color-rule);
+}
+
+.dark {
+  color-scheme: dark;
+  --surface: oklch(0.16 0.008 60);
+  --text: oklch(0.93 0.006 85);
+  --hairline: oklch(0.28 0.008 70);
+}
+
+@layer base {
+  html {
+    background: var(--surface);
+  }
+
+  body {
+    display: flex;
+    min-height: 100dvh;
+    flex-direction: column;
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font-sans);
+    text-wrap: pretty;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    text-wrap: balance;
+  }
+
+  :focus-visible {
+    outline: 1px solid var(--color-ember);
+    outline-offset: 3px;
+  }
+}
+
+.section {
+  padding-block: clamp(4rem, 10vw, 9rem);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rise {
+  animation: rise 400ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
