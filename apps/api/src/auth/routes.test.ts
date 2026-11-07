@@ -27,6 +27,8 @@ const env = {
 let verificationFails = false;
 let sessionFails = false;
 let discoveryFails = false;
+let readFails = false;
+let revokeFails = false;
 let handleAuthRoutes!: typeof import("./routes").handleAuthRoutes;
 
 beforeAll(async () => {
@@ -77,8 +79,18 @@ beforeAll(async () => {
       return { ...input, expiresAt: new Date(), id: "session-id" };
     },
     hasAdminGroup: () => false,
-    readSession: async () => null,
-    revokeSession: async () => undefined,
+    readSession: async () => {
+      if (readFails) {
+        throw new Error("connection refused");
+      }
+      return null;
+    },
+    revokeSession: async () => {
+      if (revokeFails) {
+        throw new Error("connection refused");
+      }
+      return undefined;
+    },
     sessionInputFromClaims: () => ({
       email: null,
       groups: [],
@@ -177,5 +189,51 @@ describe("handleAuthRoutes callback failures", () => {
     expect(response.status).toBe(401);
     expect(await response.json()).toEqual({ error: "id_token_invalid" });
     expect(lines.join("\n")).toContain("auth_callback_failed");
+  });
+});
+
+describe("handleAuthRoutes error normalisation", () => {
+  test("an unknown auth path is a JSON 404", async () => {
+    const { response } = await call(
+      new URL("https://dasa122.net/api/auth/nope"),
+    );
+
+    expect(response.status).toBe(404);
+    expect(response.headers.get("content-type")).toContain("application/json");
+    expect(await response.json()).toEqual({
+      error: "not_found",
+      message: "Not found",
+    });
+  });
+
+  test("a session read failure is 503 session_unavailable", async () => {
+    readFails = true;
+    try {
+      const { response, lines } = await call(
+        new URL("https://dasa122.net/api/auth/session"),
+      );
+
+      expect(response.status).toBe(503);
+      expect(await response.json()).toEqual({ error: "session_unavailable" });
+      expect(lines.join("\n")).toContain("auth_session_read_failed");
+    } finally {
+      readFails = false;
+    }
+  });
+
+  test("a session revoke failure on logout is 503 session_unavailable", async () => {
+    revokeFails = true;
+    try {
+      const { response, lines } = await call(
+        new URL("https://dasa122.net/api/auth/logout"),
+        "dasa_session=abc",
+      );
+
+      expect(response.status).toBe(503);
+      expect(await response.json()).toEqual({ error: "session_unavailable" });
+      expect(lines.join("\n")).toContain("auth_session_revoke_failed");
+    } finally {
+      revokeFails = false;
+    }
   });
 });

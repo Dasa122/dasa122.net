@@ -292,13 +292,30 @@ async function handleCallback(request: Request, url: URL): Promise<Response> {
 async function handleLogout(request: Request): Promise<Response> {
   const id = parseCookies(request.headers.get("cookie"))[SESSION_COOKIE];
   if (id !== undefined) {
-    await revokeSession(id);
+    try {
+      await revokeSession(id);
+    } catch (error) {
+      logger.error(
+        { err: error, event: "auth_session_revoke_failed" },
+        "session revocation failed",
+      );
+      return json(503, { error: "session_unavailable" });
+    }
   }
   return redirect(env.publicOrigin, [clearSessionCookie()]);
 }
 
 async function handleSession(request: Request): Promise<Response> {
-  const session = await readSession(request);
+  let session: Awaited<ReturnType<typeof readSession>>;
+  try {
+    session = await readSession(request);
+  } catch (error) {
+    logger.error(
+      { err: error, event: "auth_session_read_failed" },
+      "session read failed",
+    );
+    return json(503, { error: "session_unavailable" });
+  }
   if (session === null) {
     return json(401, {
       authenticated: false,
@@ -328,6 +345,6 @@ export async function handleAuthRoutes(
     case "/api/auth/session":
       return handleSession(request);
     default:
-      return new Response("Not found", { status: 404 });
+      return json(404, { error: "not_found", message: "Not found" });
   }
 }

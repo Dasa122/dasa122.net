@@ -29,6 +29,13 @@ try {
 }
 logger.info({ port: env.port }, "database migrations applied, starting api");
 
+function json(status: number, body: unknown): Response {
+  return new Response(JSON.stringify(body), {
+    headers: { "content-type": "application/json" },
+    status,
+  });
+}
+
 export const server = Bun.serve({
   async fetch(request) {
     const url = new URL(request.url);
@@ -55,23 +62,23 @@ export const server = Bun.serve({
       });
       if (matched) return response;
 
-      return new Response("Not found", { status: 404 });
+      return json(404, { error: "not_found", message: "Not found" });
     } catch (error) {
       if (error instanceof ORPCError) {
         logger.warn(
           { code: error.code, status: error.status },
           "request rejected",
         );
-        return new Response(
-          JSON.stringify({ error: error.code, message: error.message }),
-          {
-            headers: { "content-type": "application/json" },
-            status: error.status,
-          },
-        );
+        return json(error.status, {
+          error: error.code,
+          message: error.message,
+        });
       }
       logger.error({ err: error }, "request failed");
-      return new Response("Internal Server Error", { status: 500 });
+      return json(500, {
+        error: "internal_error",
+        message: "Internal Server Error",
+      });
     }
   },
   port: env.port,
