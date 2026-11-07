@@ -1,6 +1,7 @@
 import { SQL } from "bun";
 import { drizzle } from "drizzle-orm/bun-sql";
 import { migrate } from "drizzle-orm/bun-sql/migrator";
+import { env } from "../env";
 import * as schema from "./schema";
 
 export type Database = ReturnType<typeof drizzle<typeof schema>>;
@@ -14,7 +15,4 @@ export async function migrateToLatest(db: Database): Promise<void> {
   await migrate(db, { migrationsFolder: "src/database/migrations" });
 }
 
-export const db = createDb(
-  process.env.DATABASE_URL ??
-    "postgresql://postgres:postgres@localhost:5432/dasa122_net",
-);
+export const db = createDb(env.databaseUrl);

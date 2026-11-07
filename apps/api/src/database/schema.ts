@@ -1,3 +1,4 @@
+import type { githubMetaSchema, linkedinMetaSchema } from "@dasa122/contract";
 import { sql } from "drizzle-orm";
 import {
   boolean,
@@ -10,24 +11,15 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import type { z } from "zod";
 
-/** The GitHub event a generated post was distilled from. Mirrors the
- * contract's `githubMetaSchema`. */
-export type GithubMeta = {
-  action: string;
-  commitSha: string | null;
-  language: string | null;
-  repo: string;
-  stars: number | null;
-  url: string;
-};
+/** The GitHub event a generated post was distilled from: the contract's wire
+ * shape, stored verbatim as jsonb. */
+export type GithubMeta = z.infer<typeof githubMetaSchema>;
 
-/** The LinkedIn post a generated post mirrors. Mirrors the contract's
- * `linkedinMetaSchema`. */
-export type LinkedinMeta = {
-  permalink: string;
-  postedAt: string | null;
-};
+/** The LinkedIn post a generated post mirrors: the contract's wire shape,
+ * stored verbatim as jsonb. */
+export type LinkedinMeta = z.infer<typeof linkedinMetaSchema>;
 
 export const postsTable = pgTable(
   "posts",
@@ -52,7 +44,8 @@ export const postsTable = pgTable(
       .defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
-      .defaultNow(),
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (table) => [
     uniqueIndex("posts_source_external_id_unique").on(
@@ -81,7 +74,8 @@ export const projectsTable = pgTable("projects", {
     .defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
-    .defaultNow(),
+    .defaultNow()
+    .$onUpdate(() => new Date()),
 });
 
 export const sessionsTable = pgTable("sessions", {
@@ -101,7 +95,8 @@ export const settingsTable = pgTable("settings", {
   value: jsonb("value").notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
-    .defaultNow(),
+    .defaultNow()
+    .$onUpdate(() => new Date()),
 });
 
 export const syncStateTable = pgTable("sync_state", {
@@ -112,7 +107,8 @@ export const syncStateTable = pgTable("sync_state", {
   lastError: text("last_error"),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
-    .defaultNow(),
+    .defaultNow()
+    .$onUpdate(() => new Date()),
 });
 
 export const mediaTable = pgTable("media", {
