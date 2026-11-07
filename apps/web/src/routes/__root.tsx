@@ -70,6 +70,7 @@ function RootComponent() {
         <HeadContent />
       </head>
       <body>
+        <div aria-hidden="true" className="scroll-progress" />
         <a
           className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[70] focus:border focus:border-rule focus:bg-paper focus:px-4 focus:py-2 focus:font-mono focus:text-[0.75rem] focus:text-ink"
           href="#main"

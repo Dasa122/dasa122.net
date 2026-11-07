@@ -217,3 +217,141 @@
     animation: none;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Scroll-driven motion. Everything here is CSS-first: without a scroll
+   timeline the decorative line simply does not render, and section content is
+   never left hidden.
+   --------------------------------------------------------------------------- */
+
+/* A 2px ember line at the very top of the viewport, above the sticky header
+   (z-40) but below the noise film (z-60), and never in the way of a click. */
+.scroll-progress {
+  display: none;
+}
+
+@supports (animation-timeline: scroll()) {
+  .scroll-progress {
+    position: fixed;
+    inset-inline: 0;
+    top: 0;
+    z-index: 50;
+    display: block;
+    height: 2px;
+    background: var(--color-ember);
+    transform-origin: left;
+    pointer-events: none;
+    animation: grow-x linear both;
+    animation-timeline: scroll(root block);
+  }
+}
+
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* The kicker pins under the header while its section's rows scroll past. It
+   only does so above md: on a phone the header is two lines tall, and a
+   pinned label would eat the viewport. It is a full-width band so rows slide
+   beneath it instead of sitting on the same line as the label. */
+.section-kicker {
+  display: block;
+}
+
+@media (width >= 48rem) {
+  .section-kicker {
+    position: sticky;
+    top: 4.3rem;
+    z-index: 10;
+    background: color-mix(in oklab, var(--surface) 88%, transparent);
+    backdrop-filter: blur(3px);
+  }
+}
+
+/* A view-timeline entrance, opted into by the hook only where it is
+   supported. The attribute is set from an effect, so no JavaScript means no
+   [data-reveal] and therefore no hidden content. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    [data-reveal].reveal-vt {
+      opacity: 1;
+      transform: none;
+      transition: none;
+      animation: reveal-in linear both;
+      animation-timeline: view();
+      animation-range: entry 5% entry 65%;
+    }
+  }
+}
+
+@keyframes reveal-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The wordmark enters as a left-to-right wipe. Vertical insets are negative so
+   a serif's overshoot and descenders are never clipped; the base state (no
+   animation, e.g. reduced motion) is fully visible. */
+@media (prefers-reduced-motion: no-preference) {
+  .hero-wipe {
+    animation: wipe-x 900ms cubic-bezier(0.2, 0, 0, 1) both;
+  }
+}
+
+@keyframes wipe-x {
+  from {
+    clip-path: inset(-30% 100% -30% 0);
+  }
+  to {
+    clip-path: inset(-30% -10% -30% 0);
+  }
+}
+
+/* A row that lifts a hair on hover, and does the same when anything inside it
+   takes focus, so the keyboard gets the same affordance as the mouse. */
+.row-lift {
+  transition:
+    background-color 200ms cubic-bezier(0.2, 0, 0, 1),
+    translate 200ms cubic-bezier(0.2, 0, 0, 1),
+    box-shadow 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (hover: hover) {
+  .row-lift:hover {
+    translate: 0 -1px;
+    box-shadow: var(--shadow-lift);
+  }
+}
+
+.row-lift:focus-within {
+  translate: 0 -1px;
+  box-shadow: var(--shadow-lift);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The progress bar carries no information when it cannot move, so it goes. */
+  .scroll-progress {
+    display: none;
+  }
+
+  .row-lift {
+    transition: background-color 200ms linear;
+  }
+
+  .row-lift:hover,
+  .row-lift:focus-within {
+    translate: none;
+    box-shadow: none;
+  }
+}

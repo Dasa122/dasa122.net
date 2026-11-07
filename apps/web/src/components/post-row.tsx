@@ -24,7 +24,7 @@ export function PostRow({ post }: { post: PostSummary }) {
 
   return (
     <article
-      className={`group relative -mx-3 flex flex-wrap items-baseline gap-x-8 gap-y-2 rounded-[var(--radius-md)] px-3 py-5 pr-10 transition-[background-color,transform] duration-200 ease-[cubic-bezier(0.2,0,0,1)]${
+      className={`group row-lift relative -mx-3 flex flex-wrap items-baseline gap-x-8 gap-y-2 rounded-[var(--radius-md)] px-3 py-5 pr-10${
         post.slug
           ? " hover:bg-[var(--color-surface-2)] has-[a:active]:scale-[0.998]"
           : ""

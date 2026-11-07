@@ -16,7 +16,7 @@ export function ProjectRow({ project }: { project: Project }) {
     "transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] after:absolute after:inset-0 after:content-[''] hover:text-ember-text";
 
   return (
-    <article className="group relative -mx-3 rounded-[var(--radius-md)] px-3 py-6 pr-10 transition-[background-color,transform] duration-200 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-[var(--color-surface-2)] has-[a:active]:scale-[0.998]">
+    <article className="group row-lift relative -mx-3 rounded-[var(--radius-md)] px-3 py-6 pr-10 hover:bg-[var(--color-surface-2)] has-[a:active]:scale-[0.998]">
       <h3 className="text-2xl leading-tight tracking-[-0.01em]">
         <Link
           className={linkClass}
