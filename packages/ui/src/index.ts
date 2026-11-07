@@ -1,4 +1,4 @@
-export { Button } from "./components/button";
+export { Button, buttonClassName } from "./components/button";
 export { DataPanel } from "./components/data-panel";
 export { Meta } from "./components/meta";
 export { Prose } from "./components/prose";

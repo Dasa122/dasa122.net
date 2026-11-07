@@ -1,6 +1,6 @@
 import type { postSummarySchema } from "@dasa122/contract";
 import { Meta, SourceBadge, Tag } from "@dasa122/ui";
-import { Link, useRouter } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { formatDate } from "../utils/format";
 
 export type PostSummary = ReturnType<typeof postSummarySchema.parse>;
@@ -10,23 +10,12 @@ export type PostSummary = ReturnType<typeof postSummarySchema.parse>;
  * reading time. A row, not a card — the parent supplies the hairline rules.
  */
 export function PostRow({ post }: { post: PostSummary }) {
-  // The row also renders outside a router (static markup in tests); fall back
-  // to a plain anchor there so the markup does not need a provider.
-  const router = useRouter({ warn: false });
   const className =
     "transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] hover:text-ember-text";
   const title = post.slug ? (
-    router ? (
-      // The news routes arrive in their own task; `to` is cast so the link is
-      // already router-aware without waiting for the generated route tree.
-      <Link className={className} to={`/news/${post.slug}` as never}>
-        {post.title}
-      </Link>
-    ) : (
-      <a className={className} href={`/news/${post.slug}`}>
-        {post.title}
-      </a>
-    )
+    <Link className={className} params={{ slug: post.slug }} to="/news/$slug">
+      {post.title}
+    </Link>
   ) : (
     post.title
   );

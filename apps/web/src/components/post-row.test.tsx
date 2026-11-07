@@ -1,4 +1,10 @@
 import { describe, expect, test } from "bun:test";
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRouter,
+  RouterProvider,
+} from "@tanstack/react-router";
 import { renderToStaticMarkup } from "react-dom/server";
 import { PostRow } from "./post-row";
 
@@ -20,16 +26,28 @@ const post = {
   updatedAt: "2026-11-07T10:00:00.000Z",
 };
 
+/** Render the row inside a real router, as it ships. */
+async function renderRow(): Promise<string> {
+  const router = createRouter({
+    history: createMemoryHistory({ initialEntries: ["/"] }),
+    routeTree: createRootRoute({
+      component: () => <PostRow post={post} />,
+    }),
+  });
+  await router.load();
+  return renderToStaticMarkup(<RouterProvider router={router} />);
+}
+
 describe("PostRow", () => {
-  test("renders the title, the source badge and the reading time", () => {
-    const html = renderToStaticMarkup(<PostRow post={post} />);
+  test("renders the title, the source badge and the reading time", async () => {
+    const html = await renderRow();
     expect(html).toContain("Hello");
     expect(html).toContain("NOTE");
     expect(html).toContain("2 min");
   });
 
-  test("links to the post slug", () => {
-    const html = renderToStaticMarkup(<PostRow post={post} />);
-    expect(html).toContain("/news/hello");
+  test("links to the post slug", async () => {
+    const html = await renderRow();
+    expect(html).toContain('href="/news/hello"');
   });
 });

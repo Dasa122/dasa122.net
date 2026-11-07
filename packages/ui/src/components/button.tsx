@@ -12,6 +12,14 @@ const variants = {
   solid: `${base} bg-ember-fill px-5 py-3 text-paper`,
 } as const;
 
+/**
+ * The Button styling for a variant, exported so router-aware links can share
+ * the primitive's look without re-styling it inline.
+ */
+export function buttonClassName(variant: "solid" | "quiet"): string {
+  return variants[variant];
+}
+
 export function Button({
   variant,
   href,
@@ -25,7 +33,7 @@ export function Button({
   disabled?: boolean;
   children: ReactNode;
 }) {
-  const className = variants[variant];
+  const className = buttonClassName(variant);
 
   if (href) {
     return (

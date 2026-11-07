@@ -1,6 +1,6 @@
-import { Button, Rule, Section } from "@dasa122/ui";
+import { buttonClassName, Rule, Section } from "@dasa122/ui";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Fragment } from "react";
 import { PostRow } from "../components/post-row";
 import { ProjectRow } from "../components/project-row";
@@ -14,6 +14,13 @@ const DESCRIPTION =
 
 const frame = "mx-auto w-full max-w-[80rem] px-6 md:px-10";
 const heading = "text-3xl leading-tight tracking-[-0.01em] md:text-4xl";
+
+// One options object per query, shared by the loader's prefetch and the
+// component's `useQuery` so the server render is never fetched twice.
+const postsOptions = orpc.posts.list.queryOptions({
+  input: { limit: POSTS_LIMIT },
+});
+const projectsOptions = orpc.projects.list.queryOptions({ input: {} });
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -33,21 +40,15 @@ export const Route = createFileRoute("/")({
   },
   loader: async ({ context }) => {
     await Promise.all([
-      context.queryClient.prefetchQuery(
-        orpc.posts.list.queryOptions({ input: { limit: POSTS_LIMIT } }),
-      ),
-      context.queryClient.prefetchQuery(
-        orpc.projects.list.queryOptions({ input: {} }),
-      ),
+      context.queryClient.prefetchQuery(postsOptions),
+      context.queryClient.prefetchQuery(projectsOptions),
     ]);
   },
 });
 
 function HomePage() {
-  const posts = useQuery(
-    orpc.posts.list.queryOptions({ input: { limit: POSTS_LIMIT } }),
-  );
-  const projects = useQuery(orpc.projects.list.queryOptions({ input: {} }));
+  const posts = useQuery(postsOptions);
+  const projects = useQuery(projectsOptions);
   const featured = (projects.data?.items ?? []).filter(
     (project) => project.featured,
   );
@@ -89,9 +90,9 @@ function HomePage() {
         <Section>
           <div className="flex flex-wrap items-baseline justify-between gap-4">
             <h2 className={heading}>Notes</h2>
-            <Button href="/news" variant="quiet">
+            <Link className={buttonClassName("quiet")} to="/news">
               All notes
-            </Button>
+            </Link>
           </div>
 
           <div className="mt-6">
