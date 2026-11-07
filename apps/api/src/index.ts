@@ -6,12 +6,17 @@ import {
   experimental_ZodSmartCoercionPlugin,
   ZodToJsonSchemaConverter,
 } from "@orpc/zod/zod4";
+import { desc, eq } from "drizzle-orm";
 import { handleAuthRoutes } from "./auth/routes";
 import { db, migrateToLatest } from "./database/index";
+import { mediaTable } from "./database/schema";
 import { env } from "./env";
 import { logger } from "./logger";
+import { requireAdmin } from "./middleware/auth";
 import { type ApiContext, buildContext } from "./middleware/context";
 import { assertSameOrigin } from "./middleware/csrf";
+import { mediaFilePath } from "./modules/media/repository";
+import { readMediaUpload } from "./modules/media/router";
 import { appRouter } from "./router";
 
 export const rpcHandler = new RPCHandler<ApiContext>(appRouter);
@@ -42,6 +47,56 @@ function json(status: number, body: unknown): Response {
   });
 }
 
+const MEDIA_PREFIX = "/api/media/";
+
+function badMediaRequest(): Response {
+  return json(400, {
+    error: "bad_request",
+    message: "Invalid media filename",
+  });
+}
+
+/**
+ * Serves an uploaded file from `MEDIA_DIR`. The filename is rejected outright
+ * when it can leave that directory, so no encoding can escape it.
+ */
+async function serveMedia(pathname: string): Promise<Response> {
+  let filename: string;
+  try {
+    filename = decodeURIComponent(pathname.slice(MEDIA_PREFIX.length));
+  } catch {
+    return badMediaRequest();
+  }
+
+  if (
+    filename === "" ||
+    filename.includes("/") ||
+    filename.includes("\\") ||
+    filename.includes("..")
+  ) {
+    return badMediaRequest();
+  }
+
+  const file = Bun.file(mediaFilePath(filename));
+  if (!(await file.exists())) {
+    return json(404, { error: "not_found", message: "Media not found" });
+  }
+
+  const [row] = await db
+    .select({ mime: mediaTable.mime })
+    .from(mediaTable)
+    .where(eq(mediaTable.filename, filename))
+    .orderBy(desc(mediaTable.createdAt))
+    .limit(1);
+
+  return new Response(file, {
+    headers: {
+      "cache-control": "public, max-age=31536000, immutable",
+      "content-type": row?.mime ?? "application/octet-stream",
+    },
+  });
+}
+
 export const server = Bun.serve({
   async fetch(request) {
     const url = new URL(request.url);
@@ -52,7 +107,19 @@ export const server = Bun.serve({
         return await handleAuthRoutes(request, url);
       }
 
+      if (url.pathname.startsWith(MEDIA_PREFIX)) {
+        return await serveMedia(url.pathname);
+      }
+
       const context = await buildContext(request);
+
+      // The contract's upload input describes the stored metadata and cannot
+      // carry file bytes, so the multipart upload is dispatched here before
+      // oRPC's JSON input validation would reject it.
+      if (request.method === "POST" && url.pathname === "/api/admin/media") {
+        await requireAdmin(context);
+        return json(200, await readMediaUpload(request));
+      }
 
       if (url.pathname === "/api/rpc" || url.pathname.startsWith("/api/rpc/")) {
         const { matched, response } = await rpcHandler.handle(request, {
