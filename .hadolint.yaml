@@ -1,0 +1,6 @@
+# hadolint only fails the build on errors, not on style advice.
+failure-threshold: error
+ignored:
+  # Consecutive RUN layers are deliberate: install, build, then a production
+  # reinstall. They are only rebuilt when the lockfile or sources change.
+  - DL3059
