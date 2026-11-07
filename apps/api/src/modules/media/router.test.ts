@@ -42,4 +42,21 @@ describe("uploadMedia", () => {
       }),
     ).rejects.toThrow();
   });
+
+  test("a re-upload gets a new name so its immutable url keeps its bytes", async () => {
+    const first = await uploadMedia({
+      bytes: new Uint8Array([1]),
+      filename: "reupload.png",
+      mime: "image/png",
+    });
+    const second = await uploadMedia({
+      bytes: new Uint8Array([2, 3]),
+      filename: "reupload.png",
+      mime: "image/png",
+    });
+
+    expect(first.filename).toBe("reupload.png");
+    expect(second.filename).toMatch(/^reupload-[0-9a-f]{6}\.png$/);
+    expect(second.url).toBe(`/api/media/${second.filename}`);
+  });
 });

@@ -2,6 +2,7 @@ import { ORPCError } from "@orpc/server";
 import { db } from "../../database";
 import { mediaTable } from "../../database/schema";
 import { env } from "../../env";
+import { sanitizeFilename } from "./filename";
 
 export type MediaUpload = {
   bytes: number;
@@ -40,10 +41,19 @@ export function mediaFilePath(filename: string): string {
   return `${mediaDir().replace(/\/+$/, "")}/${filename}`;
 }
 
-/** Lowercases and collapses every run outside the safe set into one dash. */
-function sanitizeFilename(input: string): string {
-  const cleaned = input.replace(/[^a-zA-Z0-9._-]+/g, "-").toLowerCase();
-  return cleaned === "" ? crypto.randomUUID() : cleaned;
+/** Adds a short random token so a re-upload never reuses an immutable URL. */
+async function uniqueFilename(filename: string): Promise<string> {
+  const dot = filename.lastIndexOf(".");
+  const base = dot > 0 ? filename.slice(0, dot) : filename;
+  const extension = dot > 0 ? filename.slice(dot) : "";
+
+  while (true) {
+    const token = crypto.randomUUID().replace(/-/g, "").slice(0, 6);
+    const candidate = `${base}-${token}${extension}`;
+    if (!(await Bun.file(mediaFilePath(candidate)).exists())) {
+      return candidate;
+    }
+  }
 }
 
 /**
@@ -64,7 +74,10 @@ export async function uploadMedia(
     });
   }
 
-  const filename = sanitizeFilename(file.filename);
+  let filename = sanitizeFilename(file.filename);
+  if (await Bun.file(mediaFilePath(filename)).exists()) {
+    filename = await uniqueFilename(filename);
+  }
   // `Bun.write` creates the file and any missing parent directories.
   await Bun.write(mediaFilePath(filename), file.bytes);
 

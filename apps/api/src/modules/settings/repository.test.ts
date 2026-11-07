@@ -50,4 +50,24 @@ describe("settings", () => {
     expect(settings.githubUsername).toBe("Dasa122");
     expect(settings.socials).toEqual({});
   });
+
+  test("merges a socials patch one level deep", async () => {
+    await updateSettings({ socials: { email: "a@b.c", github: "dasa" } });
+    const settings = await updateSettings({ socials: { linkedin: "li" } });
+
+    expect(settings.socials).toEqual({
+      email: "a@b.c",
+      github: "dasa",
+      linkedin: "li",
+    });
+  });
+
+  test("an invalid stored blob falls back to the defaults", async () => {
+    await testDb
+      .insert(settingsTable)
+      .values({ key: "site", value: { socials: null } });
+
+    const settings = await getSettings();
+    expect(settings).toEqual(DEFAULT_SITE_SETTINGS);
+  });
 });

@@ -15,6 +15,7 @@ import { logger } from "./logger";
 import { requireAdmin } from "./middleware/auth";
 import { type ApiContext, buildContext } from "./middleware/context";
 import { assertSameOrigin } from "./middleware/csrf";
+import { parseMediaFilename } from "./modules/media/filename";
 import { mediaFilePath } from "./modules/media/repository";
 import { readMediaUpload } from "./modules/media/router";
 import { appRouter } from "./router";
@@ -61,19 +62,8 @@ function badMediaRequest(): Response {
  * when it can leave that directory, so no encoding can escape it.
  */
 async function serveMedia(pathname: string): Promise<Response> {
-  let filename: string;
-  try {
-    filename = decodeURIComponent(pathname.slice(MEDIA_PREFIX.length));
-  } catch {
-    return badMediaRequest();
-  }
-
-  if (
-    filename === "" ||
-    filename.includes("/") ||
-    filename.includes("\\") ||
-    filename.includes("..")
-  ) {
+  const filename = parseMediaFilename(pathname.slice(MEDIA_PREFIX.length));
+  if (filename === null) {
     return badMediaRequest();
   }
 

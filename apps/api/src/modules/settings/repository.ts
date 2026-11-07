@@ -1,4 +1,4 @@
-import type { siteSettingsSchema } from "@dasa122/contract";
+import { siteSettingsSchema } from "@dasa122/contract";
 import { eq } from "drizzle-orm";
 import type { z } from "zod";
 import { db } from "../../database";
@@ -39,17 +39,25 @@ export async function getSettings(): Promise<SiteSettings> {
   ) {
     return { ...DEFAULT_SITE_SETTINGS };
   }
-  return {
+
+  const merged = {
     ...DEFAULT_SITE_SETTINGS,
     ...(row.value as Partial<SiteSettings>),
   };
+  const parsed = siteSettingsSchema.safeParse(merged);
+  return parsed.success ? parsed.data : { ...DEFAULT_SITE_SETTINGS };
 }
 
 /** Merges the patch over the current settings and upserts the `site` row. */
 export async function updateSettings(
   patch: Partial<SiteSettings>,
 ): Promise<SiteSettings> {
-  const next = { ...(await getSettings()), ...patch };
+  const current = await getSettings();
+  const next = {
+    ...current,
+    ...patch,
+    socials: { ...current.socials, ...patch.socials },
+  };
   await db
     .insert(settingsTable)
     .values({ key: SITE_KEY, value: next })
