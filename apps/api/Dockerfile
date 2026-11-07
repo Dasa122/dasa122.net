@@ -17,6 +17,17 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=builder /app/apps/api/dist ./dist
 COPY --from=builder /app/apps/api/src/database/migrations ./src/database/migrations
+# esbuild is a Go build-time bundler; nothing loads it at runtime, and shipping
+# it drags 26 Go stdlib CVEs into the image scan. Drop it and its platform
+# package (the real files live under node_modules/.bun, the top-level entry is a
+# symlink), covering both the hoisted and the per-package install trees.
+RUN rm -rf \
+      node_modules/.bun/@esbuild+* \
+      node_modules/@esbuild \
+      apps/*/node_modules/.bun/@esbuild+* \
+      apps/*/node_modules/@esbuild \
+      packages/*/node_modules/.bun/@esbuild+* \
+      packages/*/node_modules/@esbuild
 RUN mkdir -p /app/media && chown bun:bun /app/media
 USER bun
 EXPOSE 3001/tcp
