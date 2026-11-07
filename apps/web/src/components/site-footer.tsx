@@ -1,9 +1,4 @@
-const navigation = [
-  { href: "/news", label: "News" },
-  { href: "/work", label: "Work" },
-  { href: "/github", label: "GitHub" },
-  { href: "/about", label: "About" },
-] as const;
+import { navigation } from "../lib/navigation";
 
 export function SiteFooter() {
   return (
@@ -18,7 +13,7 @@ export function SiteFooter() {
         >
           {navigation.map((item) => (
             <a
-              className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-muted transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] hover:text-ember"
+              className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-muted transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] hover:text-ember-text"
               href={item.href}
               key={item.href}
             >

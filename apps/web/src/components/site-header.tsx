@@ -1,9 +1,4 @@
-const navigation = [
-  { href: "/news", label: "News" },
-  { href: "/work", label: "Work" },
-  { href: "/github", label: "GitHub" },
-  { href: "/about", label: "About" },
-] as const;
+import { navigation } from "../lib/navigation";
 
 export function SiteHeader() {
   return (
@@ -17,11 +12,11 @@ export function SiteHeader() {
         </a>
         <nav
           aria-label="Primary"
-          className="col-span-5 flex justify-end gap-5 md:col-span-4 md:col-start-9 md:gap-8"
+          className="col-span-5 flex flex-wrap justify-end gap-3 md:col-span-4 md:col-start-9 md:gap-8"
         >
           {navigation.map((item) => (
             <a
-              className="border-b border-transparent pb-0.5 font-mono text-[0.6875rem] uppercase tracking-[0.14em] transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] hover:border-ember hover:text-ember"
+              className="border-b border-transparent pb-0.5 font-mono text-[0.6875rem] uppercase tracking-[0.14em] transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] hover:border-ember hover:text-ember-text"
               href={item.href}
               key={item.href}
             >
