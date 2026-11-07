@@ -59,6 +59,7 @@ dasa122.net/
 ├── apps/
 │   ├── web/            TanStack Start SSR app  (container: web)
 │   └── api/            Bun.serve + oRPC API  (container: api)
+│       └── src/database/migrations/   Drizzle SQL migrations (committed)
 ├── packages/
 │   ├── contract/       oRPC contract + zod wire schemas
 │   │   └── src/
@@ -67,7 +68,6 @@ dasa122.net/
 │   │       ├── client/        client factory -> { client, orpc }
 │   │       └── errors.ts      the shared error map
 │   └── ui/             shared React components + design tokens
-├── drizzle/            Drizzle migrations (committed)
 ├── docs/
 │   └── superpowers/specs/
 ├── turbo.json
@@ -86,7 +86,7 @@ This project deliberately mirrors the conventions of an existing, already-runnin
 - **Biome:** `correctness` and `security` rules are the enforced baseline; `style`/`complexity`/`a11y` are advisory and enabled selectively. `useImportExtensions` is **off** (the Bun resolver needs no extensions). `noNodejsModules` is **error** for all app and package sources. `noUndeclaredDependencies` is **error**. `useSortedKeys` is **off** for route files (TanStack Router route-property order is semantic) and for Drizzle schema files (column order is semantic). Assist actions `organizeImports`, `useSortedKeys`, `useSortedAttributes` are on.
 - **Pre-commit:** lefthook running `biome check --write` on staged files.
 - **CI gate order:** `bun install --frozen-lockfile` → `biome check .` (no write) → `bun typecheck` → `bun run build` → `bun run test`, with a PostgreSQL service container for the test job.
-- **Migrations are applied automatically at boot** by the API process via Drizzle's `migrate()` — there is no separate migration step in the container startup. The `migrationsFolder` path is relative to the process working directory, so the release image must contain the migrations at that exact path.
+- **Migrations are applied automatically at boot** by the API process via Drizzle's `migrate()` — there is no separate migration step in the container startup. The `migrationsFolder` path is relative to the process working directory, so the release image must contain the migrations at that exact path. The canonical location is `apps/api/src/database/migrations/`. The API container's working directory is `/app`, so the release image copies that folder to `/app/src/database/migrations` and the API calls `migrate(db, { migrationsFolder: 'src/database/migrations' })`.
 - **Contract authoring:** the root contract is `oc.errors(errorMap).router({ ... })`. Each procedure is `oc.route({ method, path, tags, operationId, description }).input(zodSchema).output(zodSchema)`. Wire schemas are **hand-written zod** in `packages/contract/src/domains/`, never derived from Drizzle types. The server side uses `implement(appContract).$context<ApiContext>()` followed by `base.router({ ... })`, which type-checks the implementation against the contract. The client factory returns `{ client, orpc: createTanstackQueryUtils(client) }`.
 - **List responses are `{ items, total }`** — there is no response envelope.
 
@@ -179,7 +179,9 @@ Defined in `packages/contract` with `os.contract` / `os.router`, implemented in 
 | `projects.bySlug` | Single published project. |
 | `site.get` | Public site settings: name, tagline, description, OG image, accent, social links, github handle, enabled feed sources. |
 | `github.overview` | Repos, languages, and activity — **served from the DB cache only**. Never calls GitHub per visitor. |
-| `healthz` | Liveness + DB readiness. |
+| `health` | API liveness + database readiness. Exposed over REST at `/api/health`; used as the API container's healthcheck. |
+
+The API's `health` procedure and the web application's `/healthz` route are different things. `health` (REST: `/api/health`) checks the API process *and* its database connection. The web application's `/healthz` route is a liveness check for the web process only and must never depend on the database, so that a database outage cannot mark the web container unhealthy and trigger a restart loop.
 
 **Admin** (all require a valid session AND the admin group)
 
@@ -419,7 +421,7 @@ Editing is client-side state with a **server-validated** save. Drafts are autosa
 - Both images are based on `oven/bun:1.4.4-alpine` and run as the non-root `bun` user.
 - The `web` release stage must copy the root `node_modules` **and** `apps/web/node_modules`, and must keep the build output at `apps/web/dist`. The server bundle treats `react`, `react-dom`, and the `@tanstack/*` packages as external and resolves them by walking up from its own directory; `apps/web/node_modules/*` are symlinks into the root `.bun` store, so flattening the layout breaks resolution.
 - `srvx` must be invoked by its **direct binary path**, never through `bun x` — `bun x` would fetch the package from the network at container start.
-- The `api` release stage must copy the migrations folder to `/app/src/database/migrations`, because the `migrationsFolder` option is resolved relative to the process working directory and migrations are applied at boot.
+- The `api` release stage must copy `apps/api/src/database/migrations` to `/app/src/database/migrations`, because the `migrationsFolder` option is resolved relative to the process working directory and migrations are applied at boot.
 - Healthchecks use busybox `wget`, since the Alpine base image has no `curl`: `web` → `http://127.0.0.1:3000/healthz`, `api` → `http://127.0.0.1:3001/api/health`.
 - **The web application must actually implement a `/healthz` route.** A comparable existing application on this infrastructure has a Dockerfile healthcheck pointing at `/healthz` but no such route in the application, so that check can never pass. Do not copy that. `/healthz` is a liveness check and must not depend on the database; a separate readiness check covers the database.
 
