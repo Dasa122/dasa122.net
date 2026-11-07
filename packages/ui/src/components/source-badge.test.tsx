@@ -24,6 +24,6 @@ describe("SourceBadge", () => {
   test("uses the accessible ember-text token, not the non-text ember token", () => {
     const html = renderToStaticMarkup(<SourceBadge source="own" />);
     expect(html).toContain("text-ember-text");
-    expect(html).not.toContain("text-ember ");
+    expect(html).not.toMatch(/text-ember\b(?!-)/);
   });
 });
