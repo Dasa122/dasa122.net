@@ -1,0 +1,24 @@
+{
+  "dependencies": {
+    "@dasa122/contract": "workspace:*",
+    "@orpc/client": "catalog:",
+    "@orpc/openapi": "catalog:",
+    "@orpc/server": "catalog:",
+    "drizzle-orm": "catalog:",
+    "marked": "18.1.3",
+    "shiki": "4.6.0",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "catalog:"
+  },
+  "name": "@dasa122/api",
+  "private": true,
+  "scripts": {
+    "dev": "bun run --hot src/index.ts",
+    "test": "bun test --pass-with-no-tests",
+    "typecheck": "tsc --noEmit"
+  },
+  "type": "module",
+  "version": "0.1.0"
+}

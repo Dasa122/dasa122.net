@@ -12,3 +12,6 @@ dist/
 coverage/
 
 media/
+
+# SDD scratch (task briefs, reports, progress ledger) must never be committed
+.superpowers/
