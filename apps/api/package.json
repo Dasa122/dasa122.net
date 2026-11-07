@@ -10,11 +10,14 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@types/bun": "catalog:",
+    "drizzle-kit": "catalog:",
     "typescript": "catalog:"
   },
   "name": "@dasa122/api",
   "private": true,
   "scripts": {
+    "build": "bun run build.ts",
     "dev": "bun run --hot src/index.ts",
     "test": "bun test --pass-with-no-tests",
     "typecheck": "tsc --noEmit"
