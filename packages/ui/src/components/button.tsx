@@ -9,7 +9,7 @@ const base =
 // dark mode, where paper on it is only 2.2:1.
 const variants = {
   quiet: `${base} bg-[linear-gradient(currentColor,currentColor)] bg-[length:0%_1px] bg-left-bottom bg-no-repeat text-ink hover:bg-[length:100%_1px] hover:text-ember-text`,
-  solid: `${base} rounded-[var(--radius-sm)] bg-ember-fill px-5 py-3 text-paper hover:bg-[color-mix(in_oklab,var(--color-ember-fill)_88%,black)] hover:shadow-[var(--shadow-lift)]`,
+  solid: `${base} rounded-[var(--radius-sm)] bg-ember-fill px-5 py-3 text-on-accent hover:bg-[color-mix(in_oklab,var(--color-ember-fill)_88%,black)] hover:shadow-[var(--shadow-lift)]`,
 } as const;
 
 /**

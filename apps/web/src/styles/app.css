@@ -20,6 +20,9 @@
 
   --color-surface-2: oklch(0.945 0.008 85);
   --color-surface-3: oklch(0.912 0.01 85);
+  /* Text on the ember fill. Deliberately never remapped: the fill is the same
+     value in both palettes, and paper is not (it is the dark canvas). */
+  --color-on-accent: oklch(0.97 0.005 85);
   --radius-sm: 3px;
   --radius-md: 6px;
   --shadow-lift:
@@ -39,6 +42,9 @@
   --surface: oklch(0.16 0.008 60);
   --text: oklch(0.93 0.006 85);
   --hairline: oklch(0.28 0.008 70);
+  --color-paper: oklch(0.16 0.008 60);
+  --color-ink: oklch(0.93 0.006 85);
+  --color-rule: oklch(0.28 0.008 70);
   --color-surface-2: oklch(0.205 0.009 60);
   --color-surface-3: oklch(0.245 0.01 60);
   --shadow-lift:

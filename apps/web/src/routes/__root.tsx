@@ -55,8 +55,18 @@ function RootComponent() {
   const name = settings?.name.trim() || "Dasa122";
 
   return (
-    <html lang="en" style={accentStyle(settings?.accent)}>
+    <html
+      lang="en"
+      style={accentStyle(settings?.accent)}
+      suppressHydrationWarning
+    >
       <head>
+        {/* Runs before the first paint: no light flash on a dark reload. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(()=>{try{const s=localStorage.getItem('theme');const d=s?s==='dark':matchMedia('(prefers-color-scheme: dark)').matches;if(d)document.documentElement.classList.add('dark')}catch(e){}})()`,
+          }}
+        />
         <HeadContent />
       </head>
       <body>
