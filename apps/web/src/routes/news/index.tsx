@@ -31,7 +31,7 @@ const DESCRIPTION =
 const frame = "mx-auto w-full max-w-[80rem] px-6 md:px-10";
 const heading = "text-3xl leading-tight tracking-[-0.01em] md:text-4xl";
 const filterLink =
-  "font-mono text-[0.75rem] uppercase tracking-[0.14em] text-muted transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] hover:text-ember-text";
+  "font-mono text-[0.75rem] uppercase tracking-[0.14em] transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] hover:text-ember-text";
 
 function parseSearch(search: Record<string, unknown>): NewsSearch {
   const source = SOURCES.some((option) => option.value === search.source)
@@ -111,7 +111,7 @@ function FilterLink({
   return (
     <Link
       aria-current={active ? "true" : undefined}
-      className={`${filterLink}${active ? " text-ink" : ""}`}
+      className={`${filterLink} ${active ? "text-ink" : "text-muted"}`}
       search={search}
       to="/news"
     >
@@ -208,6 +208,12 @@ function NewsPage() {
               </Fragment>
             ))}
           </div>
+
+          {feed.isFetchNextPageError && (
+            <p className="py-5 font-mono text-[0.75rem] text-ember-text">
+              Could not load more notes.
+            </p>
+          )}
 
           {feed.hasNextPage && (
             <div className="mt-8">

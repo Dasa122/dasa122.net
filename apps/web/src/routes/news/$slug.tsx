@@ -1,4 +1,4 @@
-import { DataPanel, Meta, Rule, Section, SourceBadge, Tag } from "@dasa122/ui";
+import { Meta, Rule, Section, SourceBadge, Tag } from "@dasa122/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { MarkdownBody } from "../../components/markdown-body";
@@ -83,9 +83,12 @@ function PostPage() {
   if (!post) {
     return null;
   }
-  const meta = [formatDate(post.publishedAt), `${post.readTimeMin} min`]
-    .filter(Boolean)
-    .join(" · ");
+  const published = post.publishedAt ? new Date(post.publishedAt) : null;
+  const publishedYear =
+    published && !Number.isNaN(published.getTime())
+      ? published.getUTCFullYear()
+      : null;
+  const date = formatDate(post.publishedAt);
 
   return (
     <main className="flex-1">
@@ -97,7 +100,22 @@ function PostPage() {
               {post.title}
             </h1>
             <div className="mt-5">
-              <Meta>{meta}</Meta>
+              <Meta>
+                {date && `${date} · `}
+                {publishedYear && (
+                  <>
+                    <Link
+                      className="transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] hover:text-ember-text hover:underline hover:underline-offset-4"
+                      search={{ year: publishedYear }}
+                      to="/news"
+                    >
+                      {publishedYear}
+                    </Link>
+                    {" · "}
+                  </>
+                )}
+                {post.readTimeMin} min
+              </Meta>
             </div>
           </header>
 
@@ -108,7 +126,9 @@ function PostPage() {
           {post.tags.length > 0 && (
             <div className="mt-10 flex flex-wrap gap-1.5">
               {post.tags.map((tag) => (
-                <Tag key={tag}>{tag}</Tag>
+                <Link key={tag} search={{ tag }} to="/news">
+                  <Tag>{tag}</Tag>
+                </Link>
               ))}
             </div>
           )}
@@ -153,11 +173,15 @@ function PostNotFound() {
     <main className="flex-1">
       <div className={frame}>
         <Section>
-          <DataPanel title="404">
-            <p className="font-mono text-[0.75rem] text-muted">
-              That note does not exist.
-            </p>
-          </DataPanel>
+          <p className="font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-muted">
+            404
+          </p>
+          <div className="mt-4">
+            <Rule />
+          </div>
+          <p className="mt-4 font-mono text-[0.75rem] text-muted">
+            That note does not exist.
+          </p>
         </Section>
       </div>
     </main>
