@@ -58,3 +58,33 @@ describe("parseEnv", () => {
     expect(env.publicOrigin).toBe("https://dasa122.net");
   });
 });
+
+describe("parseEnv MCP_TOKEN", () => {
+  const base = {
+    AUTHENTIK_ISSUER: "https://auth.dasa122.net/application/o/demo/",
+    DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/dasa122_net",
+    PUBLIC_ORIGIN: "https://dasa122.net",
+  };
+  const parseToken = (token: string) =>
+    parseEnv({ ...base, MCP_TOKEN: token }).mcpToken;
+
+  test("empty is valid and means disabled", () => {
+    expect(parseToken("")).toBe("");
+  });
+
+  test("rejects a token shorter than eight characters", () => {
+    expect(() => parseToken("short")).toThrow();
+  });
+
+  test("rejects a token containing whitespace", () => {
+    expect(() => parseToken("has space")).toThrow();
+  });
+
+  test("accepts eight characters", () => {
+    expect(parseToken("a".repeat(8))).toBe("a".repeat(8));
+  });
+
+  test("trims a trailing newline out of the secret", () => {
+    expect(parseToken("test-token-123\n")).toBe("test-token-123");
+  });
+});
