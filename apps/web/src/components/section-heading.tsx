@@ -1,6 +1,19 @@
 import type { ReactNode } from "react";
 
 /**
+ * The section's mono kicker. Rendered as a sibling of the rows rather than
+ * inside the heading block, so it can stay pinned for the length of the
+ * section while its rows scroll past (above md only — see `app.css`).
+ */
+export function SectionKicker({ children }: { children: ReactNode }) {
+  return (
+    <p className="section-kicker -mx-1 mb-1 px-1 py-1.5 font-mono text-[0.625rem] uppercase tracking-[0.18em] text-muted">
+      {children}
+    </p>
+  );
+}
+
+/**
  * The one heading pattern for the site: a mono kicker, a display title, and an
  * optional quiet action pinned to the baseline of the right edge. Interior
  * pages pass `as="h1"` for the page title; everything else is an `h2`.

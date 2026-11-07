@@ -61,15 +61,16 @@ function RootComponent() {
       suppressHydrationWarning
     >
       <head>
-        {/* Runs before the first paint: no light flash on a dark reload. */}
+        {/* Runs before the first paint: dark is the default, light is opt-in. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(()=>{try{const s=localStorage.getItem('theme');const d=s?s==='dark':matchMedia('(prefers-color-scheme: dark)').matches;if(d)document.documentElement.classList.add('dark')}catch(e){}})()`,
+            __html: `(()=>{try{const s=localStorage.getItem('theme');const d=s?s==='dark':true;if(d)document.documentElement.classList.add('dark')}catch(e){}})()`,
           }}
         />
         <HeadContent />
       </head>
       <body>
+        <div aria-hidden="true" className="scroll-progress" />
         <a
           className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[70] focus:border focus:border-rule focus:bg-paper focus:px-4 focus:py-2 focus:font-mono focus:text-[0.75rem] focus:text-ink"
           href="#main"

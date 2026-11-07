@@ -27,6 +27,11 @@ function sharedObserver(): IntersectionObserver {
  * Opts an element into the page's scroll reveal. The attribute is set from an
  * effect, so a render without JavaScript shows the content immediately; the
  * stagger index becomes a small transition delay.
+ *
+ * Where the browser supports view timelines the element hands the work to
+ * CSS (`reveal-vt`) instead of the observer: same entrance, no JavaScript in
+ * the loop. Both paths start from a visible base state, so nothing is ever
+ * stranded at `opacity: 0`.
  */
 export function useReveal<T extends HTMLElement>(
   index = 0,
@@ -48,6 +53,17 @@ export function useReveal<T extends HTMLElement>(
     if (reduced || typeof IntersectionObserver === "undefined") {
       node.dataset.reveal = "in";
       return;
+    }
+
+    const viewTimeline =
+      typeof CSS !== "undefined" &&
+      typeof CSS.supports === "function" &&
+      CSS.supports("animation-timeline: view()");
+    if (viewTimeline) {
+      node.classList.add("reveal-vt");
+      return () => {
+        node.classList.remove("reveal-vt");
+      };
     }
 
     // Anything already in the viewport reveals before the first paint; the

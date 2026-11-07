@@ -24,13 +24,13 @@ export function PostRow({ post }: { post: PostSummary }) {
 
   return (
     <article
-      className={`group relative -mx-3 flex flex-wrap items-baseline gap-x-8 gap-y-2 rounded-[var(--radius-md)] px-3 py-5 pr-10 transition-[background-color,transform] duration-200 ease-[cubic-bezier(0.2,0,0,1)]${
+      className={`group row-lift relative -mx-3 flex flex-wrap items-baseline gap-x-4 gap-y-2 rounded-[var(--radius-md)] px-3 py-5 pr-10 sm:gap-x-8${
         post.slug
           ? " hover:bg-[var(--color-surface-2)] has-[a:active]:scale-[0.998]"
           : ""
       }`}
     >
-      <div className="w-20 shrink-0">
+      <div className="w-16 shrink-0 sm:w-20">
         <SourceBadge source={post.source} />
       </div>
       <div className="min-w-0 flex-1">
@@ -57,7 +57,11 @@ export function PostRow({ post }: { post: PostSummary }) {
           </div>
         )}
       </div>
-      <Meta>{meta}</Meta>
+      {/* A flex-1 sibling never wraps on its own, so the meta is given a full
+          line on a phone instead of squeezing the title to a sliver. */}
+      <div className="w-full text-right sm:w-auto">
+        <Meta>{meta}</Meta>
+      </div>
       {post.slug && (
         <span
           aria-hidden="true"

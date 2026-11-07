@@ -4,7 +4,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Fragment } from "react";
 import { PostRow } from "../components/post-row";
 import { ProjectRow } from "../components/project-row";
-import { SectionHeading } from "../components/section-heading";
+import { SectionHeading, SectionKicker } from "../components/section-heading";
+import { useCountUp } from "../hooks/use-count-up";
 import { useReveal } from "../hooks/use-reveal";
 import { canonicalOrigin } from "../utils/canonical";
 import { orpc } from "../utils/orpc";
@@ -58,13 +59,20 @@ function HomePage() {
   const work = useReveal<HTMLDivElement>(1);
   const notes = useReveal<HTMLDivElement>(2);
 
+  const postsCount = useCountUp(posts.data?.total);
+  const projectsCount = useCountUp(projects.data?.total);
+
   return (
     <main className="flex-1">
       <div className={frame}>
-        <div ref={hero}>
+        <div className="relative isolate overflow-hidden" ref={hero}>
+          <div
+            aria-hidden="true"
+            className="hero-glow pointer-events-none absolute inset-0 -z-10"
+          />
           <header className="grid grid-cols-12 gap-x-6 pt-[clamp(3.5rem,9vw,7rem)]">
             <div className="col-span-12 md:col-span-7">
-              <h1 className="font-display text-[clamp(4.5rem,14vw,11rem)] leading-[0.82] tracking-[-0.04em]">
+              <h1 className="hero-wipe font-display text-[clamp(4.5rem,14vw,11rem)] leading-[0.82] tracking-[-0.04em]">
                 Dasa122
               </h1>
               <div
@@ -80,13 +88,26 @@ function HomePage() {
                 Builds careful software for the web — interfaces, APIs, and the
                 systems between them.
               </p>
+              <p className="mt-6 flex items-center gap-2 font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-muted">
+                <span aria-hidden="true" className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-source-github opacity-60" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-source-github" />
+                </span>
+                Building in public
+              </p>
               <p className="mt-6 flex items-center gap-3 font-mono text-[0.75rem] tabular-nums text-muted">
                 <span title={posts.isError ? "unavailable" : undefined}>
-                  {posts.data?.total ?? "—"} posts
+                  <span className="tabular-nums" ref={postsCount.ref}>
+                    {postsCount.value ?? "—"}
+                  </span>{" "}
+                  posts
                 </span>
                 <span aria-hidden="true" className="h-3 w-px bg-rule" />
                 <span title={projects.isError ? "unavailable" : undefined}>
-                  {projects.data?.total ?? "—"} projects
+                  <span className="tabular-nums" ref={projectsCount.ref}>
+                    {projectsCount.value ?? "—"}
+                  </span>{" "}
+                  projects
                 </span>
               </p>
             </div>
@@ -103,7 +124,8 @@ function HomePage() {
         {featured.length > 0 && (
           <div ref={work}>
             <Section>
-              <SectionHeading label="Work" title="Selected work" />
+              <SectionKicker>Work</SectionKicker>
+              <SectionHeading title="Selected work" />
               <div className="mt-6">
                 <Rule />
                 {featured.map((project, index) => (
@@ -119,13 +141,13 @@ function HomePage() {
 
         <div ref={notes}>
           <Section>
+            <SectionKicker>Journal</SectionKicker>
             <SectionHeading
               action={
                 <Link className={buttonClassName("quiet")} to="/news">
                   All notes
                 </Link>
               }
-              label="Journal"
               title="Notes"
             />
 
