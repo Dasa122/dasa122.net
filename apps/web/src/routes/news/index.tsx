@@ -16,6 +16,9 @@ export const SOURCES: { value: PostSource; label: string }[] = [
   { label: "LinkedIn", value: "linkedin" },
 ];
 
+/** The sources the feed shows when settings are unavailable. */
+const DEFAULT_SOURCES: PostSource[] = SOURCES.map((option) => option.value);
+
 type NewsSearch = {
   cursor?: string;
   source?: PostSource;
@@ -57,17 +60,14 @@ function parseSearch(search: Record<string, unknown>): NewsSearch {
 
 function feedOptions(search: NewsSearch, enabledSources: PostSource[]) {
   return orpc.posts.list.infiniteOptions({
+    // An explicitly empty source set means "no sources", not "all sources".
+    enabled: enabledSources.length > 0,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     initialPageParam: search.cursor ?? null,
     input: (cursor) => ({
       cursor: cursor ?? undefined,
       limit: PAGE_SIZE,
-      sources:
-        search.source !== undefined
-          ? [search.source]
-          : enabledSources.length > 0
-            ? enabledSources
-            : undefined,
+      sources: search.source !== undefined ? [search.source] : enabledSources,
       tag: search.tag,
       year: search.year,
     }),
@@ -93,9 +93,15 @@ export const Route = createFileRoute("/news/")({
     };
   },
   loader: async ({ context, deps }) => {
-    const settings = await context.queryClient.ensureQueryData(siteOptions);
+    let enabledSources = DEFAULT_SOURCES;
+    try {
+      const settings = await context.queryClient.ensureQueryData(siteOptions);
+      enabledSources = settings.enabledSources;
+    } catch {
+      // A settings outage degrades the source filter, not the page.
+    }
     await context.queryClient.prefetchInfiniteQuery(
-      feedOptions(deps, settings.enabledSources),
+      feedOptions(deps, enabledSources),
     );
   },
   loaderDeps: ({ search }) => search,
@@ -134,10 +140,10 @@ function FilterLink({
 function NewsPage() {
   const search = Route.useSearch();
   const site = useQuery(siteOptions);
-  const feed = useInfiniteQuery(
-    feedOptions(search, site.data?.enabledSources ?? []),
-  );
+  const enabledSources = site.data?.enabledSources ?? DEFAULT_SOURCES;
+  const feed = useInfiniteQuery(feedOptions(search, enabledSources));
   const posts = feed.data?.pages.flatMap((page) => page.items) ?? [];
+  const feedHidden = enabledSources.length === 0;
 
   return (
     <main className="flex-1">
@@ -200,7 +206,7 @@ function NewsPage() {
 
           <div className="mt-8">
             <Rule />
-            {feed.isPending && (
+            {feed.isPending && !feedHidden && (
               <p className="py-5 font-mono text-[0.75rem] text-muted">
                 Loading notes…
               </p>
@@ -210,7 +216,7 @@ function NewsPage() {
                 Could not load the feed.
               </p>
             )}
-            {feed.isSuccess && posts.length === 0 && (
+            {(feed.isSuccess || feedHidden) && posts.length === 0 && (
               <p className="py-5 font-mono text-[0.75rem] text-muted">
                 Nothing published yet.
               </p>
