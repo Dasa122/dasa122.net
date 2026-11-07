@@ -4,7 +4,15 @@ import viteReact from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  plugins: [tanstackStart(), viteReact(), tailwindcss()],
+  plugins: [
+    tanstackStart({
+      router: {
+        routeFileIgnorePattern: "\\.test\\.",
+      },
+    }),
+    viteReact(),
+    tailwindcss(),
+  ],
   server: {
     host: true,
     port: 3000,
