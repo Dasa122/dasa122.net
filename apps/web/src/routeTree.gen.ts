@@ -15,10 +15,13 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as GithubRouteImport } from './routes/github'
 import { Route as HealthzRouteImport } from './routes/healthz'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminNewsRouteImport } from './routes/admin/news'
 import { Route as NewsIndexRouteImport } from './routes/news/index'
 import { Route as NewsSlugRouteImport } from './routes/news/$slug'
 import { Route as WorkIndexRouteImport } from './routes/work/index'
 import { Route as WorkSlugRouteImport } from './routes/work/$slug'
+import { Route as AdminNewsIdRouteImport } from './routes/admin/news.$id'
+import { Route as AdminNewsNewRouteImport } from './routes/admin/news.new'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -50,6 +53,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminNewsRoute = AdminNewsRouteImport.update({
+  id: '/news',
+  path: '/news',
+  getParentRoute: () => AdminRoute,
+} as any)
 const NewsIndexRoute = NewsIndexRouteImport.update({
   id: '/news/',
   path: '/news/',
@@ -70,6 +78,16 @@ const WorkSlugRoute = WorkSlugRouteImport.update({
   path: '/work/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminNewsIdRoute = AdminNewsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AdminNewsRoute,
+} as any)
+const AdminNewsNewRoute = AdminNewsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AdminNewsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -77,22 +95,28 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/github': typeof GithubRoute
   '/healthz': typeof HealthzRoute
+  '/admin/news': typeof AdminNewsRouteWithChildren
   '/news/$slug': typeof NewsSlugRoute
   '/work/$slug': typeof WorkSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/news/': typeof NewsIndexRoute
   '/work/': typeof WorkIndexRoute
+  '/admin/news/$id': typeof AdminNewsIdRoute
+  '/admin/news/new': typeof AdminNewsNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/github': typeof GithubRoute
   '/healthz': typeof HealthzRoute
+  '/admin/news': typeof AdminNewsRouteWithChildren
   '/news/$slug': typeof NewsSlugRoute
   '/work/$slug': typeof WorkSlugRoute
   '/admin': typeof AdminIndexRoute
   '/news': typeof NewsIndexRoute
   '/work': typeof WorkIndexRoute
+  '/admin/news/$id': typeof AdminNewsIdRoute
+  '/admin/news/new': typeof AdminNewsNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -101,11 +125,14 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/github': typeof GithubRoute
   '/healthz': typeof HealthzRoute
+  '/admin/news': typeof AdminNewsRouteWithChildren
   '/news/$slug': typeof NewsSlugRoute
   '/work/$slug': typeof WorkSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/news/': typeof NewsIndexRoute
   '/work/': typeof WorkIndexRoute
+  '/admin/news/$id': typeof AdminNewsIdRoute
+  '/admin/news/new': typeof AdminNewsNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -115,22 +142,28 @@ export interface FileRouteTypes {
     | '/admin'
     | '/github'
     | '/healthz'
+    | '/admin/news'
     | '/news/$slug'
     | '/work/$slug'
     | '/admin/'
     | '/news/'
     | '/work/'
+    | '/admin/news/$id'
+    | '/admin/news/new'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
     | '/github'
     | '/healthz'
+    | '/admin/news'
     | '/news/$slug'
     | '/work/$slug'
     | '/admin'
     | '/news'
     | '/work'
+    | '/admin/news/$id'
+    | '/admin/news/new'
   id:
     | '__root__'
     | '/'
@@ -138,11 +171,14 @@ export interface FileRouteTypes {
     | '/admin'
     | '/github'
     | '/healthz'
+    | '/admin/news'
     | '/news/$slug'
     | '/work/$slug'
     | '/admin/'
     | '/news/'
     | '/work/'
+    | '/admin/news/$id'
+    | '/admin/news/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -201,6 +237,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/news': {
+      id: '/admin/news'
+      path: '/news'
+      fullPath: '/admin/news'
+      preLoaderRoute: typeof AdminNewsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/news/': {
       id: '/news/'
       path: '/news'
@@ -229,14 +272,44 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/news/$id': {
+      id: '/admin/news/$id'
+      path: '/$id'
+      fullPath: '/admin/news/$id'
+      preLoaderRoute: typeof AdminNewsIdRouteImport
+      parentRoute: typeof AdminNewsRoute
+    }
+    '/admin/news/new': {
+      id: '/admin/news/new'
+      path: '/new'
+      fullPath: '/admin/news/new'
+      preLoaderRoute: typeof AdminNewsNewRouteImport
+      parentRoute: typeof AdminNewsRoute
+    }
   }
 }
 
+interface AdminNewsRouteChildren {
+  AdminNewsIdRoute: typeof AdminNewsIdRoute
+  AdminNewsNewRoute: typeof AdminNewsNewRoute
+}
+
+const AdminNewsRouteChildren: AdminNewsRouteChildren = {
+  AdminNewsIdRoute: AdminNewsIdRoute,
+  AdminNewsNewRoute: AdminNewsNewRoute,
+}
+
+const AdminNewsRouteWithChildren = AdminNewsRoute._addFileChildren(
+  AdminNewsRouteChildren,
+)
+
 interface AdminRouteChildren {
+  AdminNewsRoute: typeof AdminNewsRouteWithChildren
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminNewsRoute: AdminNewsRouteWithChildren,
   AdminIndexRoute: AdminIndexRoute,
 }
 
