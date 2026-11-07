@@ -11,6 +11,7 @@ import { handleAuthRoutes } from "./auth/routes";
 import { db, migrateToLatest } from "./database/index";
 import { mediaTable } from "./database/schema";
 import { env } from "./env";
+import { startGitHubScheduler } from "./integrations/github/sync";
 import { logger } from "./logger";
 import { requireAdmin } from "./middleware/auth";
 import { type ApiContext, buildContext } from "./middleware/context";
@@ -40,6 +41,8 @@ try {
   process.exit(1);
 }
 logger.info({ port: env.port }, "database migrations applied, starting api");
+
+startGitHubScheduler(env.github.syncIntervalMinutes);
 
 function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {

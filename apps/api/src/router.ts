@@ -1,3 +1,4 @@
+import { adminGithubRouter, githubRouter } from "./integrations/github/router";
 import { health } from "./modules/health/router";
 import { adminMediaRouter } from "./modules/media/router";
 import { adminPostsRouter, postsRouter } from "./modules/posts/router";
@@ -10,11 +11,13 @@ import { adminStatsRouter } from "./modules/stats/router";
 // fully type-checked against its contract through `base.<path>.handler()`.
 // Move to `base.router(...)` once every contract procedure is implemented.
 export const appRouter = {
+  adminGithub: adminGithubRouter,
   adminMedia: adminMediaRouter,
   adminPosts: adminPostsRouter,
   adminProjects: adminProjectsRouter,
   adminSettings: adminSettingsRouter,
   adminStats: adminStatsRouter,
+  github: githubRouter,
   health: { check: health },
   posts: postsRouter,
   projects: projectsRouter,
