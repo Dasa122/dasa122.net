@@ -21,7 +21,7 @@ jobs:
     name: Workflow and Dockerfile validity
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: actionlint
         run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.7 -color
@@ -45,7 +45,7 @@ jobs:
       actions: read
       security-events: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Gate on fixable high and critical findings
         uses: aquasecurity/trivy-action@v0.36.0
@@ -108,7 +108,7 @@ jobs:
           - name: web
             dockerfile: apps/web/Dockerfile
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Build ${{ matrix.name }}
         run: |
