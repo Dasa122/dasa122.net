@@ -1,4 +1,5 @@
 import { env } from "../env";
+import { logger } from "../logger";
 import {
   OAUTH_COOKIE,
   parseCookies,
@@ -13,6 +14,7 @@ import {
   hasAdminGroup,
   readSession,
   revokeSession,
+  type SessionInput,
   sessionInputFromClaims,
 } from "./session";
 
@@ -170,7 +172,13 @@ async function handleLogin(url: URL): Promise<Response> {
     });
   }
 
-  const discovery = await discover(env.authentik.issuer);
+  let discovery: Awaited<ReturnType<typeof discover>>;
+  try {
+    discovery = await discover(env.authentik.issuer);
+  } catch (error) {
+    logger.warn({ err: error, event: "auth_login_failed" }, "login rejected");
+    return json(502, { error: "token_exchange_failed" });
+  }
   const state = generateState();
   const nonce = generateNonce();
   const pkce = generatePkce();
@@ -227,7 +235,11 @@ async function handleCallback(request: Request, url: URL): Promise<Response> {
       redirectUri: callbackUrl(),
     });
     idToken = tokens.id_token;
-  } catch {
+  } catch (error) {
+    logger.warn(
+      { err: error, event: "auth_callback_failed" },
+      "callback rejected",
+    );
     return json(502, { error: "token_exchange_failed" });
   }
 
@@ -240,16 +252,35 @@ async function handleCallback(request: Request, url: URL): Promise<Response> {
       nonce: oauth.nonce,
     });
     claims = verified as unknown as Record<string, unknown>;
-  } catch {
+  } catch (error) {
+    logger.warn(
+      { err: error, event: "auth_callback_failed" },
+      "callback rejected",
+    );
+    return json(401, { error: "id_token_invalid" });
+  }
+
+  let input: SessionInput;
+  try {
+    input = sessionInputFromClaims(claims);
+  } catch (error) {
+    logger.warn(
+      { err: error, event: "auth_callback_failed" },
+      "callback rejected",
+    );
     return json(401, { error: "id_token_invalid" });
   }
 
   let sessionId: string;
   try {
-    const session = await createSession(sessionInputFromClaims(claims));
+    const session = await createSession(input);
     sessionId = session.id;
-  } catch {
-    return json(401, { error: "id_token_invalid" });
+  } catch (error) {
+    logger.error(
+      { err: error, event: "auth_session_create_failed" },
+      "session creation failed",
+    );
+    return json(503, { error: "session_unavailable" });
   }
 
   return redirect(safeReturnTo(oauth.returnTo), [

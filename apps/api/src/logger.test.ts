@@ -67,4 +67,15 @@ describe("logger", () => {
     expect(lines).toHaveLength(1);
     expect(lines[0]).toContain("log_serialization_failed");
   });
+
+  test("a failing stdout write does not throw", () => {
+    const spy = spyOn(process.stdout, "write").mockImplementation(() => {
+      throw new Error("EPIPE");
+    });
+    try {
+      expect(() => logger.info({ ok: true }, "write fails")).not.toThrow();
+    } finally {
+      spy.mockRestore();
+    }
+  });
 });

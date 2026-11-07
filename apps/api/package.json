@@ -19,7 +19,7 @@
   "scripts": {
     "build": "bun run build.ts",
     "dev": "bun run --hot src/index.ts",
-    "test": "bun test --pass-with-no-tests",
+    "test": "bun test --isolate --pass-with-no-tests",
     "typecheck": "tsc --noEmit"
   },
   "type": "module",

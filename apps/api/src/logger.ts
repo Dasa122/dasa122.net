@@ -82,7 +82,12 @@ function emit(
       time,
     });
   }
-  process.stdout.write(`${line}\n`);
+  try {
+    process.stdout.write(`${line}\n`);
+  } catch {
+    // A failing or short write (EPIPE in a container) must not take down the
+    // request that was only trying to log.
+  }
 }
 
 function createLogger(bindings: LogPayload = {}): Logger {

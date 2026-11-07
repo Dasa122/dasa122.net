@@ -86,7 +86,7 @@ export function hasAdminGroup(
   session: SessionRecord | null,
   adminGroup: string,
 ): boolean {
-  return session !== null && session.groups.includes(adminGroup);
+  return session?.groups.includes(adminGroup) ?? false;
 }
 
 /**
