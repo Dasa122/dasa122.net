@@ -59,7 +59,7 @@ const RELATED_POSTS_LIMIT = 3;
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function toSummary(row: PostRow): PostSummary {
+export function toSummary(row: PostRow): PostSummary {
   return {
     coverImage: row.coverImage,
     createdAt: row.createdAt.toISOString(),
