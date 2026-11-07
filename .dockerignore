@@ -4,6 +4,7 @@
 **/.turbo
 .git
 .github
+.superpowers
 docs
 **/*.log
 .env

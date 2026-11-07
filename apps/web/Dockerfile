@@ -3,15 +3,12 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 
-FROM base AS prepare
-RUN bun install -g turbo
-COPY . .
-RUN turbo prune @dasa122/web --docker
-
 FROM base AS builder
-COPY --from=prepare /app ./
+COPY . .
 RUN bun install --frozen-lockfile
 RUN bun run build --filter=@dasa122/web
+RUN rm -rf node_modules apps/*/node_modules packages/*/node_modules \
+    && bun install --production --frozen-lockfile
 
 FROM base AS release
 COPY --from=builder /app/node_modules ./node_modules
