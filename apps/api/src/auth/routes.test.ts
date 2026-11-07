@@ -1,6 +1,7 @@
 import {
   afterAll,
   beforeAll,
+  beforeEach,
   describe,
   expect,
   mock,
@@ -29,6 +30,7 @@ let sessionFails = false;
 let discoveryFails = false;
 let readFails = false;
 let revokeFails = false;
+const revokedSessionIds: string[] = [];
 let handleAuthRoutes!: typeof import("./routes").handleAuthRoutes;
 
 beforeAll(async () => {
@@ -85,10 +87,11 @@ beforeAll(async () => {
       }
       return null;
     },
-    revokeSession: async () => {
+    revokeSession: async (id: string) => {
       if (revokeFails) {
         throw new Error("connection refused");
       }
+      revokedSessionIds.push(id);
       return undefined;
     },
     sessionInputFromClaims: () => ({
@@ -246,5 +249,84 @@ describe("handleAuthRoutes error normalisation", () => {
     } finally {
       revokeFails = false;
     }
+  });
+});
+
+/** Splits a `Set-Cookie` value into its attribute segments (name=value dropped). */
+function attributes(cookie: string): string[] {
+  return cookie.split("; ").slice(1);
+}
+
+describe("session cookie scope", () => {
+  // The failure tests above leave their flags set (no `finally` in the
+  // verification case), so reset every switch before exercising a success path.
+  beforeEach(() => {
+    discoveryFails = false;
+    readFails = false;
+    revokeFails = false;
+    sessionFails = false;
+    verificationFails = false;
+  });
+
+  test("the callback scopes dasa_session to / and not /api", async () => {
+    const { cookie, state } = await login();
+    const { response } = await call(callbackUrl(state), cookie);
+    const setCookies = response.headers.getSetCookie();
+    const issued = setCookies.find((value) =>
+      value.startsWith("dasa_session=session-id"),
+    );
+
+    expect(issued).toBeDefined();
+    expect(attributes(issued ?? "")).toContain("Path=/");
+    expect(attributes(issued ?? "")).not.toContain("Path=/api");
+  });
+
+  test("the callback also clears the legacy /api-scoped session cookie", async () => {
+    const { cookie, state } = await login();
+    const { response } = await call(callbackUrl(state), cookie);
+    const cleared = response.headers
+      .getSetCookie()
+      .find((value) => value.startsWith("dasa_session=;"));
+
+    expect(cleared).toBeDefined();
+    expect(attributes(cleared ?? "")).toContain("Path=/api");
+    expect(attributes(cleared ?? "")).toContain("Max-Age=0");
+  });
+
+  test("logout clears the session cookie on both / and /api", async () => {
+    const { response } = await call(
+      new URL("https://dasa122.net/api/auth/logout"),
+      "dasa_session=abc",
+      "POST",
+    );
+    const cleared = response.headers
+      .getSetCookie()
+      .filter((value) => value.startsWith("dasa_session=;"));
+
+    expect(cleared.some((value) => attributes(value).includes("Path=/"))).toBe(
+      true,
+    );
+    expect(
+      cleared.some((value) => attributes(value).includes("Path=/api")),
+    ).toBe(true);
+    for (const value of cleared) {
+      expect(attributes(value)).toContain("Max-Age=0");
+    }
+  });
+
+  test("the callback revokes the session the request already carried", async () => {
+    revokedSessionIds.length = 0;
+    const { cookie, state } = await login();
+    const { response } = await call(
+      callbackUrl(state),
+      `${cookie}; dasa_session=previous-session`,
+    );
+
+    expect(revokedSessionIds).toContain("previous-session");
+    expect(
+      response.headers
+        .getSetCookie()
+        .some((value) => value.startsWith("dasa_session=session-id")),
+    ).toBe(true);
   });
 });
