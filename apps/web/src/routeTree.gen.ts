@@ -15,7 +15,11 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as GithubRouteImport } from './routes/github'
 import { Route as HealthzRouteImport } from './routes/healthz'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminGithubRouteImport } from './routes/admin/github'
+import { Route as AdminLinkedinRouteImport } from './routes/admin/linkedin'
 import { Route as AdminNewsRouteImport } from './routes/admin/news'
+import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
+import { Route as AdminWorkRouteImport } from './routes/admin/work'
 import { Route as NewsIndexRouteImport } from './routes/news/index'
 import { Route as NewsSlugRouteImport } from './routes/news/$slug'
 import { Route as WorkIndexRouteImport } from './routes/work/index'
@@ -53,9 +57,29 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminGithubRoute = AdminGithubRouteImport.update({
+  id: '/github',
+  path: '/github',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLinkedinRoute = AdminLinkedinRouteImport.update({
+  id: '/linkedin',
+  path: '/linkedin',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminNewsRoute = AdminNewsRouteImport.update({
   id: '/news',
   path: '/news',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminWorkRoute = AdminWorkRouteImport.update({
+  id: '/work',
+  path: '/work',
   getParentRoute: () => AdminRoute,
 } as any)
 const NewsIndexRoute = NewsIndexRouteImport.update({
@@ -95,7 +119,11 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/github': typeof GithubRoute
   '/healthz': typeof HealthzRoute
+  '/admin/github': typeof AdminGithubRoute
+  '/admin/linkedin': typeof AdminLinkedinRoute
   '/admin/news': typeof AdminNewsRouteWithChildren
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/work': typeof AdminWorkRoute
   '/news/$slug': typeof NewsSlugRoute
   '/work/$slug': typeof WorkSlugRoute
   '/admin/': typeof AdminIndexRoute
@@ -109,7 +137,11 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/github': typeof GithubRoute
   '/healthz': typeof HealthzRoute
+  '/admin/github': typeof AdminGithubRoute
+  '/admin/linkedin': typeof AdminLinkedinRoute
   '/admin/news': typeof AdminNewsRouteWithChildren
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/work': typeof AdminWorkRoute
   '/news/$slug': typeof NewsSlugRoute
   '/work/$slug': typeof WorkSlugRoute
   '/admin': typeof AdminIndexRoute
@@ -125,7 +157,11 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/github': typeof GithubRoute
   '/healthz': typeof HealthzRoute
+  '/admin/github': typeof AdminGithubRoute
+  '/admin/linkedin': typeof AdminLinkedinRoute
   '/admin/news': typeof AdminNewsRouteWithChildren
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/work': typeof AdminWorkRoute
   '/news/$slug': typeof NewsSlugRoute
   '/work/$slug': typeof WorkSlugRoute
   '/admin/': typeof AdminIndexRoute
@@ -142,7 +178,11 @@ export interface FileRouteTypes {
     | '/admin'
     | '/github'
     | '/healthz'
+    | '/admin/github'
+    | '/admin/linkedin'
     | '/admin/news'
+    | '/admin/settings'
+    | '/admin/work'
     | '/news/$slug'
     | '/work/$slug'
     | '/admin/'
@@ -156,7 +196,11 @@ export interface FileRouteTypes {
     | '/about'
     | '/github'
     | '/healthz'
+    | '/admin/github'
+    | '/admin/linkedin'
     | '/admin/news'
+    | '/admin/settings'
+    | '/admin/work'
     | '/news/$slug'
     | '/work/$slug'
     | '/admin'
@@ -171,7 +215,11 @@ export interface FileRouteTypes {
     | '/admin'
     | '/github'
     | '/healthz'
+    | '/admin/github'
+    | '/admin/linkedin'
     | '/admin/news'
+    | '/admin/settings'
+    | '/admin/work'
     | '/news/$slug'
     | '/work/$slug'
     | '/admin/'
@@ -237,11 +285,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/github': {
+      id: '/admin/github'
+      path: '/github'
+      fullPath: '/admin/github'
+      preLoaderRoute: typeof AdminGithubRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/linkedin': {
+      id: '/admin/linkedin'
+      path: '/linkedin'
+      fullPath: '/admin/linkedin'
+      preLoaderRoute: typeof AdminLinkedinRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/news': {
       id: '/admin/news'
       path: '/news'
       fullPath: '/admin/news'
       preLoaderRoute: typeof AdminNewsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/work': {
+      id: '/admin/work'
+      path: '/work'
+      fullPath: '/admin/work'
+      preLoaderRoute: typeof AdminWorkRouteImport
       parentRoute: typeof AdminRoute
     }
     '/news/': {
@@ -304,12 +380,20 @@ const AdminNewsRouteWithChildren = AdminNewsRoute._addFileChildren(
 )
 
 interface AdminRouteChildren {
+  AdminGithubRoute: typeof AdminGithubRoute
+  AdminLinkedinRoute: typeof AdminLinkedinRoute
   AdminNewsRoute: typeof AdminNewsRouteWithChildren
+  AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminWorkRoute: typeof AdminWorkRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminGithubRoute: AdminGithubRoute,
+  AdminLinkedinRoute: AdminLinkedinRoute,
   AdminNewsRoute: AdminNewsRouteWithChildren,
+  AdminSettingsRoute: AdminSettingsRoute,
+  AdminWorkRoute: AdminWorkRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 
