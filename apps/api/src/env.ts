@@ -30,6 +30,11 @@ const schema = z
     LINKEDIN_ACCESS_TOKEN: z.string().trim().default(""),
     LINKEDIN_CLIENT_ID: z.string().trim().default(""),
     LINKEDIN_CLIENT_SECRET: z.string().trim().default(""),
+    LINKEDIN_SYNC_INTERVAL_MINUTES: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(60),
     MEDIA_DIR: z.string().trim().min(1).default("./media"),
     NODE_ENV: z.string().trim().min(1).default("development"),
     PORT: z.coerce.number().int().min(1).max(65_535).default(3001),
@@ -64,6 +69,7 @@ const schema = z
         accessToken: raw.LINKEDIN_ACCESS_TOKEN,
         clientId: raw.LINKEDIN_CLIENT_ID,
         clientSecret: raw.LINKEDIN_CLIENT_SECRET,
+        syncIntervalMinutes: raw.LINKEDIN_SYNC_INTERVAL_MINUTES,
       },
       mediaDir: raw.MEDIA_DIR,
       nodeEnv: raw.NODE_ENV,

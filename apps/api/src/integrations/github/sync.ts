@@ -1,16 +1,10 @@
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "../../database";
-import {
-  postsTable,
-  settingsTable,
-  syncStateTable,
-} from "../../database/schema";
+import { settingsTable, syncStateTable } from "../../database/schema";
 import { env } from "../../env";
 import { logger } from "../../logger";
-import { slugExistsRepo } from "../../modules/posts/repository";
-import { deriveExcerpt } from "../../util/excerpt";
-import { slugify, uniqueSlug } from "../../util/slug";
-import type { PostDraft, SyncResult } from "../types";
+import type { SyncResult } from "../types";
+import { upsertGeneratedPost } from "../upsert-post";
 import {
   fetchPublicEvents,
   fetchRepos,
@@ -158,90 +152,6 @@ async function writeSyncState(
     });
 }
 
-/** The fields a re-sync refreshes on an existing row. */
-function updatedFields(draft: PostDraft) {
-  return {
-    externalUrl: draft.externalUrl,
-    githubMeta: draft.githubMeta,
-    title: draft.title,
-    updatedAt: new Date(),
-  };
-}
-
-/**
- * Persists one draft. `external_id` plus the database's unique index make this
- * idempotent: a second run updates the row instead of inserting another. A
- * title with no alphanumerics cannot produce a slug and is skipped.
- */
-async function persistDraft(
-  draft: PostDraft,
-): Promise<"created" | "skipped" | "updated"> {
-  const base = slugify(draft.title);
-  if (base === "") {
-    return "skipped";
-  }
-
-  const [existing] = await db
-    .select({ id: postsTable.id })
-    .from(postsTable)
-    .where(
-      and(
-        eq(postsTable.source, draft.source),
-        eq(postsTable.externalId, draft.externalId),
-      ),
-    )
-    .limit(1);
-
-  if (existing !== undefined) {
-    await db
-      .update(postsTable)
-      .set(updatedFields(draft))
-      .where(eq(postsTable.id, existing.id));
-    return "updated";
-  }
-
-  const slug = await uniqueSlug(base, (candidate) =>
-    slugExistsRepo(db, candidate),
-  );
-  const [inserted] = await db
-    .insert(postsTable)
-    .values({
-      body: draft.body,
-      excerpt: deriveExcerpt(draft.title),
-      externalId: draft.externalId,
-      externalUrl: draft.externalUrl,
-      githubMeta: draft.githubMeta,
-      linkedinMeta: draft.linkedinMeta,
-      publishedAt: draft.publishedAt,
-      readTimeMin: 1,
-      slug,
-      source: draft.source,
-      status: "published",
-      tags: draft.tags,
-      title: draft.title,
-    })
-    .onConflictDoNothing({
-      target: [postsTable.source, postsTable.externalId],
-    })
-    .returning({ id: postsTable.id });
-
-  if (inserted !== undefined) {
-    return "created";
-  }
-
-  // An overlapping run inserted the same external id first; refresh that row.
-  await db
-    .update(postsTable)
-    .set(updatedFields(draft))
-    .where(
-      and(
-        eq(postsTable.source, draft.source),
-        eq(postsTable.externalId, draft.externalId),
-      ),
-    );
-  return "updated";
-}
-
 /**
  * Imports the user's public GitHub activity and caches a repository snapshot.
  * A failed run records the error in `sync_state` and leaves the last good
@@ -264,7 +174,7 @@ export async function syncGitHub(options: {
     let updated = 0;
     let skipped = 0;
     for (const draft of drafts) {
-      const outcome = await persistDraft(draft);
+      const outcome = await upsertGeneratedPost(db, draft);
       if (outcome === "created") {
         created += 1;
       } else if (outcome === "updated") {

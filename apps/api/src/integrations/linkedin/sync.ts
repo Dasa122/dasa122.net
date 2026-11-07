@@ -1,7 +1,7 @@
 import { ORPCError } from "@orpc/server";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "../../database";
-import { postsTable, syncStateTable } from "../../database/schema";
+import { settingsTable, syncStateTable } from "../../database/schema";
 import { env } from "../../env";
 import { logger } from "../../logger";
 import { insertPostRepo, slugExistsRepo } from "../../modules/posts/repository";
@@ -9,17 +9,23 @@ import { type PostSummary, toSummary } from "../../modules/posts/service";
 import { deriveExcerpt, readingTimeMinutes } from "../../util/excerpt";
 import { slugify, uniqueSlug } from "../../util/slug";
 import type { PostDraft, SyncResult } from "../types";
+import { upsertGeneratedPost } from "../upsert-post";
 import {
-  fetchLinkedInGrants,
   fetchLinkedInPosts,
   type LinkedInPost,
+  type LinkedInProbe,
+  probeLinkedInTier,
 } from "./client";
-import { type LinkedInConfig, resolveLinkedInTier } from "./tier";
+import {
+  type LinkedInConfig,
+  type LinkedInTier,
+  resolveLinkedInTier,
+} from "./tier";
 
 export type LinkedInStatus = {
   message: string | null;
   scopes: string[];
-  tier: "manual" | "active" | "insufficient_scope" | "unconfigured";
+  tier: LinkedInTier;
 };
 
 export type LinkedInOptions = {
@@ -27,12 +33,25 @@ export type LinkedInOptions = {
   fetchImpl?: typeof fetch;
 };
 
+type CachedTier = Exclude<LinkedInTier, "unconfigured">;
+
+type LinkedInTierCache = {
+  checkedAt: string;
+  error: string | null;
+  scopes: string[] | null;
+  tier: CachedTier;
+};
+
 const LINKEDIN_SOURCE = "linkedin";
+
+/** The `settings` key that caches the last `/rest/posts` probe. */
+export const LINKEDIN_TIER_KEY = "linkedin:tier";
+
 const TITLE_MAX_LENGTH = 200;
 
 /**
- * The only explanation the admin gets for a dormant poller. These strings are
- * user-facing copy: the admin panel renders them verbatim.
+ * The explanation the admin gets when the tier is resolvable without a probe.
+ * These strings are user-facing copy: the admin panel renders them verbatim.
  */
 const STATUS_MESSAGES = {
   insufficient_scope:
@@ -42,6 +61,14 @@ const STATUS_MESSAGES = {
   unconfigured:
     "Set LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET to enable LinkedIn sync. Publishing from the admin panel works without them.",
 } as const;
+
+/** A token is configured but no probe has run yet: say so, don't guess. */
+const PENDING_MESSAGE =
+  "The LinkedIn token has not been checked yet. Automatic sync activates on the next scheduled check.";
+
+/** The probe reached LinkedIn but could not confirm the token. */
+const CHECK_FAILED_MESSAGE =
+  "The LinkedIn check failed. Automatic sync stays inactive; publishing from the admin panel still works.";
 
 function configFromEnv(): LinkedInConfig {
   return {
@@ -55,7 +82,7 @@ function emptyResult(): SyncResult {
   return { created: 0, error: null, skipped: 0, updated: 0 };
 }
 
-function messageFor(tier: LinkedInStatus["tier"]): string | null {
+function messageFor(tier: LinkedInTier): string | null {
   return tier === "active" ? null : STATUS_MESSAGES[tier];
 }
 
@@ -69,6 +96,62 @@ function isHttpUrl(value: string): boolean {
     return url.protocol === "http:" || url.protocol === "https:";
   } catch {
     return false;
+  }
+}
+
+function parseTierCache(value: unknown): LinkedInTierCache | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return null;
+  }
+  const record = value as Record<string, unknown>;
+  const tier = record.tier;
+  if (tier !== "manual" && tier !== "active" && tier !== "insufficient_scope") {
+    return null;
+  }
+  const checkedAt =
+    typeof record.checkedAt === "string" ? record.checkedAt : null;
+  if (checkedAt === null) {
+    return null;
+  }
+  return {
+    checkedAt,
+    error: typeof record.error === "string" ? record.error : null,
+    scopes: Array.isArray(record.scopes)
+      ? record.scopes.filter(
+          (scope): scope is string => typeof scope === "string",
+        )
+      : null,
+    tier,
+  };
+}
+
+async function readTierCache(): Promise<LinkedInTierCache | null> {
+  const [row] = await db
+    .select({ value: settingsTable.value })
+    .from(settingsTable)
+    .where(eq(settingsTable.key, LINKEDIN_TIER_KEY))
+    .limit(1);
+  return parseTierCache(row?.value);
+}
+
+/** The cache is an optimisation; a failed write must not fail the sync. */
+async function recordTierCache(probe: LinkedInProbe): Promise<void> {
+  const value = {
+    checkedAt: new Date().toISOString(),
+    error: probe.error,
+    scopes: probe.scopes,
+    tier: probe.tier,
+  };
+  try {
+    await db
+      .insert(settingsTable)
+      .values({ key: LINKEDIN_TIER_KEY, value })
+      .onConflictDoUpdate({
+        set: { value },
+        target: settingsTable.key,
+      });
+  } catch (error) {
+    logger.warn({ err: error }, "linkedin tier cache write failed");
   }
 }
 
@@ -103,90 +186,6 @@ async function recordSyncState(
   }
 }
 
-/** The fields a re-sync refreshes on an existing row. */
-function updatedFields(draft: PostDraft) {
-  return {
-    externalUrl: draft.externalUrl,
-    linkedinMeta: draft.linkedinMeta,
-    title: draft.title,
-    updatedAt: new Date(),
-  };
-}
-
-/**
- * Persists one draft by `(source, external_id)`. This mirrors the GitHub
- * worker: the unique index makes a repeat sync an update, and the shared
- * `uniqueSlug` keeps a second post with a similar title from colliding.
- */
-async function persistDraft(
-  draft: PostDraft,
-): Promise<"created" | "skipped" | "updated"> {
-  const base = slugify(draft.title);
-  if (base === "") {
-    return "skipped";
-  }
-
-  const [existing] = await db
-    .select({ id: postsTable.id })
-    .from(postsTable)
-    .where(
-      and(
-        eq(postsTable.source, draft.source),
-        eq(postsTable.externalId, draft.externalId),
-      ),
-    )
-    .limit(1);
-
-  if (existing !== undefined) {
-    await db
-      .update(postsTable)
-      .set(updatedFields(draft))
-      .where(eq(postsTable.id, existing.id));
-    return "updated";
-  }
-
-  const slug = await uniqueSlug(base, (candidate) =>
-    slugExistsRepo(db, candidate),
-  );
-  const [inserted] = await db
-    .insert(postsTable)
-    .values({
-      body: draft.body,
-      excerpt: deriveExcerpt(draft.title),
-      externalId: draft.externalId,
-      externalUrl: draft.externalUrl,
-      githubMeta: draft.githubMeta,
-      linkedinMeta: draft.linkedinMeta,
-      publishedAt: draft.publishedAt,
-      readTimeMin: 1,
-      slug,
-      source: draft.source,
-      status: "published",
-      tags: draft.tags,
-      title: draft.title,
-    })
-    .onConflictDoNothing({
-      target: [postsTable.source, postsTable.externalId],
-    })
-    .returning({ id: postsTable.id });
-
-  if (inserted !== undefined) {
-    return "created";
-  }
-
-  // An overlapping run inserted the same external id first; refresh that row.
-  await db
-    .update(postsTable)
-    .set(updatedFields(draft))
-    .where(
-      and(
-        eq(postsTable.source, draft.source),
-        eq(postsTable.externalId, draft.externalId),
-      ),
-    );
-  return "updated";
-}
-
 function toDraft(post: LinkedInPost): PostDraft {
   return {
     body: post.text,
@@ -206,37 +205,53 @@ function toDraft(post: LinkedInPost): PostDraft {
 }
 
 /**
- * The admin panel's tier view. Scopes are only looked up when a token exists,
- * and a transient lookup failure leaves the poller dormant rather than making
- * the panel a 500.
+ * The admin panel's tier view. Reads the cached probe only: opening the panel
+ * never costs a LinkedIn request.
  */
 export async function getLinkedInStatus(
   options: LinkedInOptions = {},
 ): Promise<LinkedInStatus> {
   const config = options.config ?? configFromEnv();
-  const fetchImpl = options.fetchImpl ?? globalThis.fetch;
+
+  if (resolveLinkedInTier(config, null) === "unconfigured") {
+    return {
+      message: messageFor("unconfigured"),
+      scopes: [],
+      tier: "unconfigured",
+    };
+  }
+
   const token = config.accessToken?.trim() ?? "";
-
-  if (resolveLinkedInTier(config, null) === "unconfigured" || token === "") {
-    const tier = resolveLinkedInTier(config, null);
-    return { message: messageFor(tier), scopes: [], tier };
+  if (token === "") {
+    return { message: messageFor("manual"), scopes: [], tier: "manual" };
   }
 
-  let scopes: string[] | null = null;
-  try {
-    scopes = (await fetchLinkedInGrants(token, fetchImpl)).scopes;
-  } catch (error) {
-    logger.warn({ err: error }, "linkedin grant lookup failed");
+  const cached = await readTierCache();
+  if (cached === null) {
+    return { message: PENDING_MESSAGE, scopes: [], tier: "manual" };
   }
-
-  const tier = resolveLinkedInTier(config, scopes);
-  return { message: messageFor(tier), scopes: scopes ?? [], tier };
+  if (cached.tier === "active") {
+    return { message: null, scopes: cached.scopes ?? [], tier: "active" };
+  }
+  if (cached.tier === "insufficient_scope") {
+    return {
+      message: messageFor("insufficient_scope"),
+      scopes: cached.scopes ?? [],
+      tier: "insufficient_scope",
+    };
+  }
+  return {
+    message: CHECK_FAILED_MESSAGE,
+    scopes: cached.scopes ?? [],
+    tier: "manual",
+  };
 }
 
 /**
- * Imports the member's LinkedIn posts. The poller is dormant unless the tier
- * resolves to `active`: the local tiers and a token without `r_member_social`
- * return an empty result, and the posts endpoint is never called.
+ * Imports the member's LinkedIn posts. `/rest/posts` is the tier authority:
+ * the probe runs first and its outcome is cached. Only an `active` probe is
+ * followed by an import, and an unconfigured or token-less setup makes no
+ * request at all.
  */
 export async function syncLinkedIn(
   options: LinkedInOptions = {},
@@ -251,8 +266,9 @@ export async function syncLinkedIn(
   }
 
   try {
-    const grants = await fetchLinkedInGrants(token, fetchImpl);
-    if (resolveLinkedInTier(config, grants.scopes) !== "active") {
+    const probe = await probeLinkedInTier(token, fetchImpl);
+    await recordTierCache(probe);
+    if (probe.tier !== "active") {
       await recordSyncState("not_configured", null);
       return emptyResult();
     }
@@ -262,7 +278,7 @@ export async function syncLinkedIn(
     let updated = 0;
     let skipped = 0;
     for (const post of posts) {
-      const outcome = await persistDraft(toDraft(post));
+      const outcome = await upsertGeneratedPost(db, toDraft(post));
       if (outcome === "created") {
         created += 1;
       } else if (outcome === "updated") {
@@ -281,6 +297,57 @@ export async function syncLinkedIn(
     await recordSyncState("error", message);
     return { created: 0, error: message, skipped: 0, updated: 0 };
   }
+}
+
+/**
+ * Whether the last recorded run is old enough for a boot-time sync, so a
+ * restart storm cannot hammer the endpoint.
+ */
+async function isBootSyncDue(intervalMs: number): Promise<boolean> {
+  const [row] = await db
+    .select({ lastRunAt: syncStateTable.lastRunAt })
+    .from(syncStateTable)
+    .where(eq(syncStateTable.source, LINKEDIN_SOURCE))
+    .limit(1);
+  const lastRunAt = row?.lastRunAt;
+  if (lastRunAt === null || lastRunAt === undefined) {
+    return true;
+  }
+  return Date.now() - lastRunAt.getTime() >= intervalMs;
+}
+
+/**
+ * Runs the LinkedIn poller on boot (when due) and then every interval. With no
+ * access token it returns immediately and never touches the network; under
+ * tests it never schedules. The timer is unref'd so it cannot keep the process
+ * alive.
+ */
+export function startLinkedInScheduler(intervalMinutes: number): void {
+  if (env.nodeEnv === "test") {
+    return;
+  }
+  if (env.linkedin.accessToken.trim() === "") {
+    return;
+  }
+
+  const intervalMs = intervalMinutes * 60_000;
+  const run = () => {
+    syncLinkedIn().catch((error: unknown) => {
+      logger.warn({ err: error }, "linkedin sync failed");
+    });
+  };
+
+  void (async () => {
+    try {
+      if (await isBootSyncDue(intervalMs)) {
+        run();
+      }
+    } catch (error) {
+      logger.warn({ err: error }, "linkedin sync due check failed");
+    }
+  })();
+  const timer = setInterval(run, intervalMs);
+  timer.unref();
 }
 
 /**

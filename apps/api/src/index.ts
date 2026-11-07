@@ -12,6 +12,7 @@ import { db, migrateToLatest } from "./database/index";
 import { mediaTable } from "./database/schema";
 import { env } from "./env";
 import { startGitHubScheduler } from "./integrations/github/sync";
+import { startLinkedInScheduler } from "./integrations/linkedin/sync";
 import { logger } from "./logger";
 import { requireAdmin } from "./middleware/auth";
 import { type ApiContext, buildContext } from "./middleware/context";
@@ -43,6 +44,7 @@ try {
 logger.info({ port: env.port }, "database migrations applied, starting api");
 
 startGitHubScheduler(env.github.syncIntervalMinutes);
+startLinkedInScheduler(env.linkedin.syncIntervalMinutes);
 
 function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
