@@ -4,6 +4,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Fragment } from "react";
 import { PostRow } from "../components/post-row";
 import { ProjectRow } from "../components/project-row";
+import { SectionHeading } from "../components/section-heading";
+import { useReveal } from "../hooks/use-reveal";
 import { canonicalOrigin } from "../utils/canonical";
 import { orpc } from "../utils/orpc";
 
@@ -13,7 +15,6 @@ const DESCRIPTION =
   "Dasa122 builds careful software for the web: notes on interfaces, APIs, and the systems between them.";
 
 const frame = "mx-auto w-full max-w-[80rem] px-6 md:px-10";
-const heading = "text-3xl leading-tight tracking-[-0.01em] md:text-4xl";
 
 // One options object per query, shared by the loader's prefetch and the
 // component's `useQuery` so the server render is never fetched twice.
@@ -53,18 +54,45 @@ function HomePage() {
     (project) => project.featured,
   );
 
+  const hero = useReveal<HTMLDivElement>(0);
+  const work = useReveal<HTMLDivElement>(1);
+  const notes = useReveal<HTMLDivElement>(2);
+
   return (
     <main className="flex-1">
       <div className={frame}>
-        <header className="rise pt-[clamp(3.5rem,9vw,7rem)]">
-          <h1 className="font-display text-[clamp(4.5rem,17vw,13rem)] leading-[0.82] tracking-[-0.035em]">
-            Dasa122
-          </h1>
-          <p className="mt-6 max-w-[42ch] text-lg leading-relaxed text-ink md:mt-8 md:text-xl">
-            Builds careful software for the web — interfaces, APIs, and the
-            systems between them.
-          </p>
-        </header>
+        <div ref={hero}>
+          <header className="grid grid-cols-12 gap-x-6 pt-[clamp(3.5rem,9vw,7rem)]">
+            <div className="col-span-12 md:col-span-7">
+              <h1 className="font-display text-[clamp(4.5rem,14vw,11rem)] leading-[0.82] tracking-[-0.04em]">
+                Dasa122
+              </h1>
+              <div
+                aria-hidden="true"
+                className="draw-in mt-6 h-[2px] w-20 bg-ember"
+              />
+            </div>
+            <div className="col-span-12 mt-10 self-end md:col-span-4 md:col-start-9 md:mt-0">
+              <p className="font-mono text-[0.625rem] uppercase tracking-[0.18em] text-muted">
+                Currently
+              </p>
+              <p className="mt-3 text-[1.0625rem] leading-relaxed">
+                Builds careful software for the web — interfaces, APIs, and the
+                systems between them.
+              </p>
+              <p className="mt-6 flex items-center gap-3 font-mono text-[0.75rem] tabular-nums text-muted">
+                <span title={posts.isError ? "unavailable" : undefined}>
+                  {posts.data?.total ?? "—"} posts
+                </span>
+                <span aria-hidden="true" className="h-3 w-px bg-rule" />
+                <span title={projects.isError ? "unavailable" : undefined}>
+                  {projects.data?.total ?? "—"} projects
+                </span>
+              </p>
+            </div>
+          </header>
+          <Rule className="mt-16 md:mt-24" />
+        </div>
 
         {projects.isError && (
           <p className="pt-8 font-mono text-[0.75rem] text-ember-text">
@@ -73,53 +101,60 @@ function HomePage() {
         )}
 
         {featured.length > 0 && (
+          <div ref={work}>
+            <Section>
+              <SectionHeading label="Work" title="Selected work" />
+              <div className="mt-6">
+                <Rule />
+                {featured.map((project, index) => (
+                  <Fragment key={project.id}>
+                    {index > 0 && <Rule />}
+                    <ProjectRow project={project} />
+                  </Fragment>
+                ))}
+              </div>
+            </Section>
+          </div>
+        )}
+
+        <div ref={notes}>
           <Section>
-            <h2 className={heading}>Selected work</h2>
+            <SectionHeading
+              action={
+                <Link className={buttonClassName("quiet")} to="/news">
+                  All notes
+                </Link>
+              }
+              label="Journal"
+              title="Notes"
+            />
+
             <div className="mt-6">
               <Rule />
-              {featured.map((project, index) => (
-                <Fragment key={project.id}>
+              {posts.isPending && (
+                <p className="py-5 font-mono text-[0.75rem] text-muted">
+                  Loading notes…
+                </p>
+              )}
+              {posts.isError && (
+                <p className="py-5 font-mono text-[0.75rem] text-ember-text">
+                  Could not load the feed.
+                </p>
+              )}
+              {posts.data?.items.length === 0 && (
+                <p className="py-5 font-mono text-[0.75rem] text-muted">
+                  Nothing published yet.
+                </p>
+              )}
+              {posts.data?.items.map((post, index) => (
+                <Fragment key={post.id}>
                   {index > 0 && <Rule />}
-                  <ProjectRow project={project} />
+                  <PostRow post={post} />
                 </Fragment>
               ))}
             </div>
           </Section>
-        )}
-
-        <Section>
-          <div className="flex flex-wrap items-baseline justify-between gap-4">
-            <h2 className={heading}>Notes</h2>
-            <Link className={buttonClassName("quiet")} to="/news">
-              All notes
-            </Link>
-          </div>
-
-          <div className="mt-6">
-            <Rule />
-            {posts.isPending && (
-              <p className="py-5 font-mono text-[0.75rem] text-muted">
-                Loading notes…
-              </p>
-            )}
-            {posts.isError && (
-              <p className="py-5 font-mono text-[0.75rem] text-ember-text">
-                Could not load the feed.
-              </p>
-            )}
-            {posts.data?.items.length === 0 && (
-              <p className="py-5 font-mono text-[0.75rem] text-muted">
-                Nothing published yet.
-              </p>
-            )}
-            {posts.data?.items.map((post, index) => (
-              <Fragment key={post.id}>
-                {index > 0 && <Rule />}
-                <PostRow post={post} />
-              </Fragment>
-            ))}
-          </div>
-        </Section>
+        </div>
       </div>
     </main>
   );

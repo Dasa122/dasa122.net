@@ -1,5 +1,7 @@
+export type NavHref = "/about" | "/github" | "/news" | "/work";
+
 export type NavItem = {
-  readonly href: string;
+  readonly href: NavHref;
   readonly label: string;
 };
 

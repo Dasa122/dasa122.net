@@ -1,9 +1,49 @@
 import { describe, expect, test } from "bun:test";
-import { fallbackApiOrigin, resolveOrigin } from "./origin";
+import {
+  fallbackApiOrigin,
+  resolveFallbackOrigin,
+  resolveOrigin,
+} from "./origin";
 
 describe("fallbackApiOrigin", () => {
   test("is an absolute origin", () => {
     expect(fallbackApiOrigin).toMatch(/^https?:\/\/[^/]+$/);
+  });
+});
+
+describe("resolveFallbackOrigin", () => {
+  test("defaults to localhost in development", () => {
+    expect(resolveFallbackOrigin(undefined, true)).toBe(
+      "http://localhost:3001",
+    );
+  });
+
+  test("defaults to the public site in a production build", () => {
+    expect(resolveFallbackOrigin(undefined, false)).toBe("https://dasa122.net");
+  });
+
+  test("an empty configured value falls through to the environment default", () => {
+    expect(resolveFallbackOrigin("", true)).toBe("http://localhost:3001");
+    expect(resolveFallbackOrigin("", false)).toBe("https://dasa122.net");
+  });
+
+  test("a configured value wins in either environment", () => {
+    expect(resolveFallbackOrigin("https://api.example.com", true)).toBe(
+      "https://api.example.com",
+    );
+    expect(resolveFallbackOrigin("https://api.example.com", false)).toBe(
+      "https://api.example.com",
+    );
+  });
+
+  test("normalises a trailing path to an origin", () => {
+    expect(resolveFallbackOrigin("http://localhost:3001/api", true)).toBe(
+      "http://localhost:3001",
+    );
+  });
+
+  test("throws on an unparseable value", () => {
+    expect(() => resolveFallbackOrigin("not a url", true)).toThrow();
   });
 });
 

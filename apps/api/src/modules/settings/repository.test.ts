@@ -6,6 +6,7 @@ import {
   expect,
   test,
 } from "bun:test";
+import { siteSettingsSchema } from "@dasa122/contract";
 import { settingsTable } from "../../database/schema";
 import { createTestDb, migrateTestDb, resetTables } from "../../test/helpers";
 import {
@@ -60,6 +61,39 @@ describe("settings", () => {
       github: "dasa",
       linkedin: "li",
     });
+  });
+
+  test("a partial patch leaves every other field at its previous value", async () => {
+    await updateSettings({
+      description: "keep me",
+      name: "Custom",
+      tagline: "before",
+    });
+    const settings = await updateSettings({ tagline: "x" });
+
+    expect(settings.name).toBe("Custom");
+    expect(settings.description).toBe("keep me");
+    expect(settings.tagline).toBe("x");
+    expect(siteSettingsSchema.safeParse(settings).success).toBe(true);
+  });
+
+  test("a socials patch keeps links the caller did not mention", async () => {
+    await updateSettings({
+      socials: { linkedin: "https://linkedin.com/in/x" },
+    });
+    const settings = await updateSettings({
+      socials: { github: "https://github.com/x" },
+    });
+
+    expect(settings.socials.github).toBe("https://github.com/x");
+    expect(settings.socials.linkedin).toBe("https://linkedin.com/in/x");
+  });
+
+  test("an explicitly undefined key does not clear a stored field", async () => {
+    await updateSettings({ tagline: "before" });
+    const settings = await updateSettings({ tagline: undefined } as never);
+
+    expect(settings.tagline).toBe("before");
   });
 
   test("an invalid stored blob falls back to the defaults", async () => {

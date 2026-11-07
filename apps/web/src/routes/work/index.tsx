@@ -1,8 +1,9 @@
-import { Rule, Section } from "@dasa122/ui";
+import { Rule } from "@dasa122/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Fragment } from "react";
 import { ProjectRow } from "../../components/project-row";
+import { SectionHeading } from "../../components/section-heading";
 import { canonicalOrigin } from "../../utils/canonical";
 import { orpc } from "../../utils/orpc";
 
@@ -11,7 +12,7 @@ const DESCRIPTION =
   "Selected projects — the software Dasa122 has built, the stack behind it, and where to find it.";
 
 const frame = "mx-auto w-full max-w-[80rem] px-6 md:px-10";
-const heading = "text-3xl leading-tight tracking-[-0.01em] md:text-4xl";
+const page = `${frame} pt-[clamp(2.5rem,6vw,4.5rem)] pb-[clamp(4rem,10vw,9rem)]`;
 
 // One options object shared by the loader's prefetch and the component's
 // `useQuery` so the server render is never fetched twice.
@@ -46,41 +47,39 @@ export function WorkIndex() {
 
   return (
     <main className="flex-1">
-      <div className={frame}>
-        <Section>
-          <header>
-            <h1 className={heading}>Work</h1>
-            <p className="mt-4 max-w-[48ch] text-lg leading-relaxed text-ink">
-              Selected projects — what was built, the stack behind it, and where
-              to find it.
-            </p>
-          </header>
+      <div className={page}>
+        <header>
+          <SectionHeading as="h1" label="Projects" title="Work" />
+          <p className="mt-5 max-w-[48ch] text-lg leading-relaxed text-ink">
+            Selected projects — what was built, the stack behind it, and where
+            to find it.
+          </p>
+        </header>
 
-          <div className="mt-8">
-            <Rule />
-            {projects.isPending && (
-              <p className="py-5 font-mono text-[0.75rem] text-muted">
-                Loading work…
-              </p>
-            )}
-            {projects.isError && (
-              <p className="py-5 font-mono text-[0.75rem] text-ember-text">
-                Could not load the work.
-              </p>
-            )}
-            {projects.isSuccess && items.length === 0 && (
-              <p className="py-5 font-mono text-[0.75rem] text-muted">
-                Nothing published yet.
-              </p>
-            )}
-            {items.map((project, index) => (
-              <Fragment key={project.id}>
-                {index > 0 && <Rule />}
-                <ProjectRow project={project} />
-              </Fragment>
-            ))}
-          </div>
-        </Section>
+        <div className="mt-8">
+          <Rule />
+          {projects.isPending && (
+            <p className="py-5 font-mono text-[0.75rem] text-muted">
+              Loading work…
+            </p>
+          )}
+          {projects.isError && (
+            <p className="py-5 font-mono text-[0.75rem] text-ember-text">
+              Could not load the work.
+            </p>
+          )}
+          {projects.isSuccess && items.length === 0 && (
+            <p className="py-5 font-mono text-[0.75rem] text-muted">
+              Nothing published yet.
+            </p>
+          )}
+          {items.map((project, index) => (
+            <Fragment key={project.id}>
+              {index > 0 && <Rule />}
+              <ProjectRow project={project} />
+            </Fragment>
+          ))}
+        </div>
       </div>
     </main>
   );
