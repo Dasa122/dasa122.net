@@ -95,7 +95,14 @@ export async function adminListProjects(filter: {
   return rows.map(toProject);
 }
 
-/** Creates a draft project with a slug derived from its title. */
+/**
+ * Creates a project with a slug derived from its title.
+ *
+ * Projects are published on creation: this is a personal showcase site, not a
+ * CMS with an editorial workflow, so a project added through the admin panel
+ * is meant to be visible. The `status` column and the public query's filter
+ * stay in place, so a draft workflow can be added later without a migration.
+ */
 export async function adminCreateProject(
   input: ProjectCreateInput,
 ): Promise<Project> {
@@ -114,6 +121,7 @@ export async function adminCreateProject(
       slug,
       sortOrder: input.sortOrder,
       stack: input.stack,
+      status: "published",
       summary: input.summary,
       title: input.title,
     })
