@@ -1,0 +1,74 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on",
+        "useSortedAttributes": "on",
+        "useSortedKeys": "on"
+      }
+    }
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
+  "files": {
+    "ignoreUnknown": true,
+    "includes": [
+      "**/*",
+      "!**/*.md",
+      "!docs",
+      "!bun.lock",
+      "!**/migrations",
+      "!**/routeTree.gen.ts"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineEnding": "lf",
+    "lineWidth": 80
+  },
+  "javascript": {
+    "globals": ["Bun"]
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "correctness": {
+        "noNodejsModules": "error",
+        "noUndeclaredDependencies": "error",
+        "recommended": true,
+        "useImportExtensions": "off"
+      },
+      "security": {
+        "recommended": true
+      }
+    }
+  },
+  "overrides": [
+    {
+      "assist": {
+        "actions": {
+          "source": {
+            "useSortedKeys": "off"
+          }
+        }
+      },
+      // TanStack Router route-property order is semantic (validateSearch feeds
+      // loader types), and Drizzle column order is semantic: in a left join the
+      // result mapper nulls a nested object when its first column is NULL, so
+      // the non-null `id` must stay first. Authored order wins in both.
+      "includes": ["apps/web/src/routes/**", "apps/api/src/database/schema.ts"]
+    }
+  ],
+  "root": true,
+  "vcs": {
+    "clientKind": "git",
+    "enabled": true,
+    "useIgnoreFile": true
+  }
+}

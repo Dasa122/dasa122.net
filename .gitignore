@@ -11,4 +11,10 @@ dist/
 .DS_Store
 coverage/
 
-media/
+# Uploaded media lives at the repo root (and apps/api when run from there);
+# anchor these so the `modules/media` source directory is not ignored.
+/media/
+/apps/api/media/
+
+# SDD scratch (task briefs, reports, progress ledger) must never be committed
+.superpowers/

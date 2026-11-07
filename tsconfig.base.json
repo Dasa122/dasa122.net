@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "module": "Preserve",
+    "moduleResolution": "bundler",
+    "noUncheckedIndexedAccess": true,
+    "paths": {
+      "#contract/*": ["./packages/contract/src/*"],
+      "#ui/*": ["./packages/ui/src/*"]
+    },
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ESNext",
+    "verbatimModuleSyntax": true
+  }
+}

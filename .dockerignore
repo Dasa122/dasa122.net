@@ -1,0 +1,14 @@
+**/node_modules
+**/dist
+**/.output
+**/.turbo
+.git
+.github
+.superpowers
+docs
+**/*.log
+.env
+.env.*
+**/coverage
+/media
+/apps/api/media
