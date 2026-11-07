@@ -15,10 +15,14 @@ const variants = {
 export function Button({
   variant,
   href,
+  onClick,
+  disabled,
   children,
 }: {
   variant: "solid" | "quiet";
   href?: string;
+  onClick?: () => void;
+  disabled?: boolean;
   children: ReactNode;
 }) {
   const className = variants[variant];
@@ -32,7 +36,12 @@ export function Button({
   }
 
   return (
-    <button className={className} type="button">
+    <button
+      className={`${className} disabled:opacity-50`}
+      disabled={disabled}
+      onClick={onClick}
+      type="button"
+    >
       {children}
     </button>
   );

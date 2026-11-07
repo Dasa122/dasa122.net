@@ -1,13 +1,11 @@
 import { Button, Rule, Section } from "@dasa122/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { createIsomorphicFn } from "@tanstack/react-start";
 import { Fragment } from "react";
 import { PostRow } from "../components/post-row";
 import { ProjectRow } from "../components/project-row";
-import { fallbackApiOrigin } from "../utils/origin";
+import { canonicalOrigin } from "../utils/canonical";
 import { orpc } from "../utils/orpc";
-import { requestOrigin } from "../utils/request";
 
 const POSTS_LIMIT = 10;
 const TITLE = "Dasa122 — notes on building software";
@@ -16,12 +14,6 @@ const DESCRIPTION =
 
 const frame = "mx-auto w-full max-w-[80rem] px-6 md:px-10";
 const heading = "text-3xl leading-tight tracking-[-0.01em] md:text-4xl";
-
-// The head runs on both sides of the wire; only the server can read the live
-// request, so the browser falls back to the configured origin.
-const canonicalOrigin = createIsomorphicFn()
-  .client(() => fallbackApiOrigin)
-  .server(() => requestOrigin() ?? fallbackApiOrigin);
 
 export const Route = createFileRoute("/")({
   component: HomePage,
