@@ -61,10 +61,10 @@ function RootComponent() {
       suppressHydrationWarning
     >
       <head>
-        {/* Runs before the first paint: no light flash on a dark reload. */}
+        {/* Runs before the first paint: dark is the default, light is opt-in. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(()=>{try{const s=localStorage.getItem('theme');const d=s?s==='dark':matchMedia('(prefers-color-scheme: dark)').matches;if(d)document.documentElement.classList.add('dark')}catch(e){}})()`,
+            __html: `(()=>{try{const s=localStorage.getItem('theme');const d=s?s==='dark':true;if(d)document.documentElement.classList.add('dark')}catch(e){}})()`,
           }}
         />
         <HeadContent />

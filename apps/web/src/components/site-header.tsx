@@ -6,9 +6,10 @@ const navLink =
   "border-b pb-0.5 font-mono text-[0.6875rem] uppercase tracking-[0.14em] transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] hover:border-ember hover:text-ember-text";
 
 export function SiteHeader({ name }: { name: string }) {
-  // The document class is already set by the inline script in the root head,
-  // so the server always renders the light label and the effect corrects it.
-  const [dark, setDark] = useState(false);
+  // The server cannot see localStorage, and dark is now the default, so the
+  // first render claims dark (and therefore offers "Light"). The effect reads
+  // the real document class and corrects the label after mount.
+  const [dark, setDark] = useState(true);
 
   useEffect(() => {
     setDark(document.documentElement.classList.contains("dark"));

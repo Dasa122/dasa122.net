@@ -21,9 +21,18 @@ describe("SourceBadge", () => {
     );
   });
 
-  test("uses the accessible ember-text token, not the non-text ember token", () => {
+  test("uses the accessible note source token, not the non-text ember token", () => {
     const html = renderToStaticMarkup(<SourceBadge source="own" />);
-    expect(html).toContain("text-ember-text");
+    expect(html).toContain("text-source-note");
     expect(html).not.toMatch(/text-ember\b(?!-)/);
+  });
+
+  test("colours an imported source with its own token", () => {
+    expect(renderToStaticMarkup(<SourceBadge source="github" />)).toContain(
+      "text-source-github",
+    );
+    expect(renderToStaticMarkup(<SourceBadge source="linkedin" />)).toContain(
+      "text-source-linkedin",
+    );
   });
 });

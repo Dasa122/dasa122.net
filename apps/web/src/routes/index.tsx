@@ -61,7 +61,11 @@ function HomePage() {
   return (
     <main className="flex-1">
       <div className={frame}>
-        <div ref={hero}>
+        <div className="relative isolate overflow-hidden" ref={hero}>
+          <div
+            aria-hidden="true"
+            className="hero-glow pointer-events-none absolute inset-0 -z-10"
+          />
           <header className="grid grid-cols-12 gap-x-6 pt-[clamp(3.5rem,9vw,7rem)]">
             <div className="col-span-12 md:col-span-7">
               <h1 className="font-display text-[clamp(4.5rem,14vw,11rem)] leading-[0.82] tracking-[-0.04em]">
@@ -79,6 +83,13 @@ function HomePage() {
               <p className="mt-3 text-[1.0625rem] leading-relaxed">
                 Builds careful software for the web — interfaces, APIs, and the
                 systems between them.
+              </p>
+              <p className="mt-6 flex items-center gap-2 font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-muted">
+                <span aria-hidden="true" className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-source-github opacity-60" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-source-github" />
+                </span>
+                Building in public
               </p>
               <p className="mt-6 flex items-center gap-3 font-mono text-[0.75rem] tabular-nums text-muted">
                 <span title={posts.isError ? "unavailable" : undefined}>

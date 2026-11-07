@@ -35,7 +35,21 @@ const DESCRIPTION =
 const frame = "mx-auto w-full max-w-[80rem] px-6 md:px-10";
 const page = `${frame} pt-[clamp(2.5rem,6vw,4.5rem)] pb-[clamp(4rem,10vw,9rem)]`;
 const filterLink =
-  "font-mono text-[0.75rem] uppercase tracking-[0.14em] transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] hover:text-ember-text";
+  "font-mono text-[0.75rem] uppercase tracking-[0.14em] transition-[color,background-color] duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)]";
+
+/** Provenance colour for the filter row, matching the feed's source badge. */
+const sourceTone: Record<PostSource, string> = {
+  github: "text-source-github",
+  linkedin: "text-source-linkedin",
+  own: "text-source-note",
+};
+
+const sourceTint: Record<PostSource, string> = {
+  github: "bg-[color-mix(in_oklab,var(--color-source-github)_12%,transparent)]",
+  linkedin:
+    "bg-[color-mix(in_oklab,var(--color-source-linkedin)_12%,transparent)]",
+  own: "bg-[color-mix(in_oklab,var(--color-source-note)_12%,transparent)]",
+};
 
 function parseSearch(search: Record<string, unknown>): NewsSearch {
   const source = SOURCES.some((option) => option.value === search.source)
@@ -121,15 +135,27 @@ function FilterLink({
   active = false,
   children,
   search,
+  source,
 }: {
   active?: boolean;
   children: ReactNode;
   search: NewsSearch;
+  source?: PostSource;
 }) {
+  const tone = source
+    ? `${sourceTone[source]} ${
+        active
+          ? `-mx-1.5 rounded-[var(--radius-sm)] px-1.5 ${sourceTint[source]}`
+          : "hover:underline hover:underline-offset-4"
+      }`
+    : active
+      ? "text-ink"
+      : "text-muted hover:text-ember-text";
+
   return (
     <Link
       aria-current={active ? "true" : undefined}
-      className={`${filterLink} ${active ? "text-ink" : "text-muted"}`}
+      className={`${filterLink} ${tone}`}
       search={search}
       to="/news"
     >
@@ -176,6 +202,7 @@ function NewsPage() {
                   cursor: undefined,
                   source: option.value,
                 }}
+                source={option.value}
               >
                 {option.label}
               </FilterLink>
