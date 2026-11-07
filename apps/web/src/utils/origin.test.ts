@@ -79,4 +79,52 @@ describe("resolveOrigin", () => {
       }),
     ).toBe("https://dasa122.net");
   });
+
+  test("upgrades a public host to https when the proxy reports http", () => {
+    expect(
+      resolveOrigin({
+        "x-forwarded-host": "dasa122.net",
+        "x-forwarded-proto": "http",
+      }),
+    ).toBe("https://dasa122.net");
+  });
+
+  test("keeps http for loopback hosts", () => {
+    expect(
+      resolveOrigin({
+        "x-forwarded-host": "localhost:3000",
+        "x-forwarded-proto": "http",
+      }),
+    ).toBe("http://localhost:3000");
+    expect(
+      resolveOrigin({
+        "x-forwarded-host": "127.0.0.1:3001",
+        "x-forwarded-proto": "http",
+      }),
+    ).toBe("http://127.0.0.1:3001");
+    expect(
+      resolveOrigin({
+        "x-forwarded-host": "[::1]:3000",
+        "x-forwarded-proto": "http",
+      }),
+    ).toBe("http://[::1]:3000");
+  });
+
+  test("keeps an explicit https origin", () => {
+    expect(
+      resolveOrigin({
+        "x-forwarded-host": "dasa122.net",
+        "x-forwarded-proto": "https",
+      }),
+    ).toBe("https://dasa122.net");
+  });
+
+  test("upgrades a chained header whose first proto is http", () => {
+    expect(
+      resolveOrigin({
+        "x-forwarded-host": "dasa122.net, internal:3000",
+        "x-forwarded-proto": "http, https",
+      }),
+    ).toBe("https://dasa122.net");
+  });
 });

@@ -63,7 +63,7 @@ function feedOptions(search: NewsSearch, enabledSources: PostSource[]) {
   return orpc.posts.list.infiniteOptions({
     // An explicitly empty source set means "no sources", not "all sources".
     enabled: enabledSources.length > 0,
-    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    getNextPageParam: (lastPage) => lastPage?.nextCursor ?? undefined,
     initialPageParam: search.cursor ?? null,
     input: (cursor) => ({
       cursor: cursor ?? undefined,
