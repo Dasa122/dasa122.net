@@ -5,9 +5,8 @@ the owner's own posts with activity imported from GitHub and LinkedIn.
 
 ## Stack
 
-Bun 1.4.4 · TypeScript (strict) · Turborepo · React 19 + TanStack Start, Router
-and Query · oRPC on a Bun HTTP server · PostgreSQL 18 + Drizzle ORM · Tailwind
-CSS v4 · Biome · `bun:test`
+Bun 1.4.4 · TypeScript (strict) · Turborepo · React 19 + TanStack Start ·
+oRPC · PostgreSQL 18 + Drizzle ORM · Tailwind CSS v4 · Biome · `bun:test`
 
 ## Layout
 
@@ -16,7 +15,6 @@ apps/api             Bun API: oRPC/REST, auth, integrations, media, migrations
 apps/web             TanStack Start SSR site and admin panel
 packages/contract    shared oRPC contract and zod schemas
 packages/ui          shared React components
-docs/                design spec, implementation plan, deployment runbook
 ```
 
 ## Local development
@@ -43,20 +41,22 @@ web app listens on <http://localhost:3000> and proxies `/api` to the API on
 
 ## Behaviour notes
 
-- Projects are published as soon as they are created; the create input has no
-  `status` field.
+- Projects are published on creation; the create input has no `status` field.
 - A project's `body` is stored but not shown publicly yet: the API returns no
   rendered HTML for projects.
 - LinkedIn's tier is probed against `/rest/posts`: `200` is `active`, `403` is
   `insufficient_scope`, anything else is `manual`. The result is cached in the
   `settings` table under `linkedin:tier`.
+- `LINKEDIN_SYNC_INTERVAL_MINUTES` sets the LinkedIn probe and sync cadence
+  (default `60`).
+- `MEDIA_DIR` defaults to `./media` locally and `/app/media` in the image;
+  uploads are served from `/api/media/<filename>`.
 - Both schedulers only sync at boot when `sync_state.lastRunAt` is older than
   the interval, so restart storms cannot exhaust a rate limit.
 
 ## REST
 
-The same procedures are served as REST under `/api`; the OpenAPI document is at
-`/api/doc/openapi.json` and Swagger UI at `/api/doc/swagger`.
+REST is served under `/api`: OpenAPI at `/api/doc/openapi.json`, Swagger UI at `/api/doc/swagger`.
 
 Array query parameters use bracket notation: `?sources[0]=own` for one value and
 `?sources[0]=own&sources[1]=github` for several. A bare `?sources=own` returns
@@ -66,7 +66,7 @@ Array query parameters use bracket notation: `?sources[0]=own` for one value and
 
 | Command | Purpose |
 | --- | --- |
-| `bun run dev` | run the API and the web app in watch mode |
+| `bun run dev -- --env-mode=loose` | run both apps in watch mode (see Local development) |
 | `bun run lint` | Biome check and write fixes |
 | `bun run typecheck` | TypeScript across every workspace |
 | `bun run build` | production build of every workspace |

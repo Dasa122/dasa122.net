@@ -4,6 +4,8 @@ ENV NODE_ENV=production
 ENV PORT=3000
 
 FROM base AS builder
+ARG VITE_API_ORIGIN=https://dasa122.net
+ENV VITE_API_ORIGIN=${VITE_API_ORIGIN}
 COPY . .
 RUN bun install --frozen-lockfile
 RUN bun run build --filter=@dasa122/web

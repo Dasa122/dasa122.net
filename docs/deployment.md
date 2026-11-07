@@ -46,6 +46,15 @@ git push -u origin feat/build-dasa122-net
    - Port: `3001`. FQDN: `https://dasa122.net/api`.
    - Persistent storage: volume mounted at `/app/media`, or uploaded images are
      lost on every redeploy.
+
+   The API serves every route under `/api`, so it must receive the request path
+   unchanged. In the application's **Advanced → Proxy** settings confirm **Path
+   prefixes** is set to **Keep paths as-is** (strip prefix off). The instance
+   this runbook was written against does not strip by default, but the setting
+   is worth confirming explicitly: if it were on, Traefik would forward
+   `/health` instead of `/api/health`, and every API route would 404 while the
+   container's own healthcheck — which calls `/api/health` from inside the
+   container — stayed green.
 4. Create the **web** application from the same repository.
    - Branch and base directory as above.
    - Build pack: `Dockerfile`, Dockerfile path `apps/web/Dockerfile`.
@@ -88,18 +97,11 @@ callback. Do not set `AUTH_DEV_BYPASS` in production — the API refuses to boot
 with it. `API_ORIGIN`, `PORT`, `SESSION_TTL_DAYS` and `AUTHENTIK_ADMIN_GROUP`
 have working defaults and can be omitted.
 
-**web**
-
-```
-PUBLIC_ORIGIN=https://dasa122.net
-API_ORIGIN=https://dasa122.net
-VITE_API_ORIGIN=https://dasa122.net
-NODE_ENV=production
-```
-
-`VITE_API_ORIGIN` is read at build time, not at container start. The image
-already falls back to `https://dasa122.net`, so the runtime value changes
-nothing.
+**web** needs **no runtime environment variables**. Its API origin is fixed at
+build time — `VITE_API_ORIGIN` is inlined by `vite build` and falls back to
+`https://dasa122.net` — and `NODE_ENV=production` is already set in the image.
+To point a build at a different origin, pass `VITE_API_ORIGIN` as a **build
+argument**; setting it at runtime has no effect.
 
 ## 5. The reverse proxy
 
@@ -164,3 +166,7 @@ must land back on `/admin` with an admin session.
 - **Web healthcheck fails.** The `/healthz` route is missing from the running web
   build. Rebuild the `web` application and confirm the route answers on port
   3000.
+- **`/api/*` returns 404 while Coolify reports the application healthy.** The
+  container healthcheck calls `/api/health` from inside the container, so a
+  path-prefix mismatch is invisible to it. Check the **Path prefixes** setting
+  in step 3.
