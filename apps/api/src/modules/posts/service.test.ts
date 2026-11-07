@@ -196,4 +196,86 @@ describe("posts service", () => {
       Promise.resolve(adminDeletePost("00000000-0000-4000-8000-000000000000")),
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
+
+  test("a duplicate explicit slug on create is CONFLICT", async () => {
+    await adminCreatePost({ ...ownPost, slug: "taken" });
+
+    await expect(
+      Promise.resolve(
+        adminCreatePost({ ...ownPost, slug: "taken", title: "Other" }),
+      ),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+  });
+
+  test("a duplicate explicit slug on update is CONFLICT, but clearing is allowed", async () => {
+    const first = await adminCreatePost({ ...ownPost, slug: "first" });
+    const second = await adminCreatePost({
+      ...ownPost,
+      slug: "second",
+      title: "Second",
+    });
+
+    await expect(
+      Promise.resolve(
+        adminUpdatePost(second.id, { id: second.id, slug: "first" }),
+      ),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+
+    const cleared = await adminUpdatePost(first.id, {
+      id: first.id,
+      slug: null,
+    });
+    expect(cleared.slug).toBeNull();
+  });
+
+  test("patching only a LinkedIn permalink on an own post keeps metadata null", async () => {
+    const created = await adminCreatePost(ownPost);
+
+    const updated = await adminUpdatePost(created.id, {
+      id: created.id,
+      linkedinPermalink: "https://www.linkedin.com/posts/x",
+    });
+
+    expect(updated.linkedinMeta).toBeNull();
+  });
+
+  test("patching a permalink on a LinkedIn post uses its stored source", async () => {
+    const created = await adminCreatePost({
+      ...ownPost,
+      linkedinPermalink: "https://www.linkedin.com/posts/y",
+      source: "linkedin",
+    });
+
+    const updated = await adminUpdatePost(created.id, {
+      id: created.id,
+      linkedinPermalink: "https://www.linkedin.com/posts/z",
+    });
+
+    expect(updated.linkedinMeta?.permalink).toBe(
+      "https://www.linkedin.com/posts/z",
+    );
+  });
+
+  test("the search filter escapes LIKE wildcards", async () => {
+    const posts = [
+      await adminCreatePost({ ...ownPost, title: "100% real" }),
+      await adminCreatePost({ ...ownPost, title: "100x real" }),
+      await adminCreatePost({ ...ownPost, title: "ab_c" }),
+      await adminCreatePost({ ...ownPost, title: "abxc" }),
+    ];
+    for (const post of posts) {
+      await adminPublishPost(post.id);
+    }
+
+    expect(
+      (await listPublishedPosts({ limit: 20, q: "100%" })).items.map(
+        (item) => item.title,
+      ),
+    ).toEqual(["100% real"]);
+    expect(
+      (await listPublishedPosts({ limit: 20, q: "ab_c" })).items.map(
+        (item) => item.title,
+      ),
+    ).toEqual(["ab_c"]);
+  });
 });

@@ -40,6 +40,11 @@ type AdminFilter = {
   status?: string;
 };
 
+/** Escapes LIKE wildcards so a search for `100%` matches a literal percent. */
+function escapeLikePattern(value: string): string {
+  return value.replace(/[\\%_]/g, (character) => `\\${character}`);
+}
+
 /** Only published, non-future posts are public. */
 function publishedConditions(): SQL[] {
   return [
@@ -77,7 +82,7 @@ export async function listPublishedPostsRepo(
     );
   }
   if (filter.q !== undefined) {
-    const pattern = `%${filter.q}%`;
+    const pattern = `%${escapeLikePattern(filter.q)}%`;
     const search = or(
       ilike(postsTable.title, pattern),
       ilike(postsTable.excerpt, pattern),

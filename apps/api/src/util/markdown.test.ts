@@ -68,4 +68,41 @@ describe("renderMarkdown", () => {
     expect(html).toContain("shiki");
     expect(html).toContain("answer");
   });
+
+  test("escapes an img onerror rather than passing it through", async () => {
+    const html = await renderMarkdown('<img src=x onerror="alert(1)">');
+    expect(html).not.toContain("onerror");
+  });
+
+  test("escapes an svg onload", async () => {
+    const html = await renderMarkdown('<svg onload="alert(1)"></svg>');
+    expect(html).not.toContain("onload");
+  });
+
+  test("neutralises an entity-encoded javascript: href", async () => {
+    const html = await renderMarkdown("[x](&#106;avascript:alert(1))");
+    expect(html.toLowerCase()).not.toContain("javascript:");
+  });
+
+  test("neutralises a whitespace-prefixed entity-encoded javascript: href", async () => {
+    const html = await renderMarkdown("[x](&#9;javascript:alert(1))");
+    expect(html.toLowerCase()).not.toContain("javascript:");
+  });
+
+  test("still highlights fenced code through shiki", async () => {
+    const html = await renderMarkdown("```ts\nconst x: number = 1\n```");
+    expect(html).toContain("<pre");
+    expect(html).toContain("shiki");
+  });
+
+  test("leaves legitimate markdown markup intact", async () => {
+    const html = await renderMarkdown(
+      "# Title\n\nSome **bold** and *em* with [a link](https://example.com) and `inline`.",
+    );
+    expect(html).toContain("<h1>Title</h1>");
+    expect(html).toContain("<strong>bold</strong>");
+    expect(html).toContain("<em>em</em>");
+    expect(html).toContain('href="https://example.com"');
+    expect(html).toContain("<code>inline</code>");
+  });
 });

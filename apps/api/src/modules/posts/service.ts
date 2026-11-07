@@ -120,7 +120,7 @@ function notFound() {
 }
 
 function linkedinMeta(
-  source: PostCreateInput["source"],
+  source: string,
   permalink: string | null,
 ): PostRow["linkedinMeta"] {
   if (source !== "linkedin" || permalink === null) {
@@ -129,10 +129,23 @@ function linkedinMeta(
   return { permalink, postedAt: null };
 }
 
+/** An explicit slug must be free; publish resolves collisions with `uniqueSlug`. */
+async function assertSlugAvailable(
+  slug: string,
+  excludeId?: string,
+): Promise<void> {
+  if (await slugExistsRepo(db, slug, excludeId)) {
+    throw new ORPCError("CONFLICT", { message: "Slug already in use" });
+  }
+}
+
 /** Creates a draft. The excerpt and reading time are derived from the body. */
 export async function adminCreatePost(
   input: PostCreateInput,
 ): Promise<PostSummary> {
+  if (input.slug !== null) {
+    await assertSlugAvailable(input.slug);
+  }
   const row = await insertPostRepo(db, {
     body: input.body,
     coverImage: input.coverImage,
@@ -175,6 +188,9 @@ export async function adminUpdatePost(
     patch.externalUrl = input.externalUrl;
   }
   if (input.slug !== undefined) {
+    if (input.slug !== null) {
+      await assertSlugAvailable(input.slug, id);
+    }
     patch.slug = input.slug;
   }
   if (input.tags !== undefined) {
@@ -184,10 +200,15 @@ export async function adminUpdatePost(
     patch.source = input.source;
   }
   if (input.linkedinPermalink !== undefined) {
-    patch.linkedinMeta = linkedinMeta(
-      input.source ?? "linkedin",
-      input.linkedinPermalink,
-    );
+    let source: string | undefined = input.source;
+    if (source === undefined) {
+      const existing = await findPostByIdRepo(db, id);
+      if (existing === null) {
+        throw notFound();
+      }
+      source = existing.source;
+    }
+    patch.linkedinMeta = linkedinMeta(source, input.linkedinPermalink);
   }
   patch.updatedAt = new Date();
 

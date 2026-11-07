@@ -2,6 +2,10 @@ import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { OpenAPIReferencePlugin } from "@orpc/openapi/plugins";
 import { ORPCError } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/fetch";
+import {
+  experimental_ZodSmartCoercionPlugin,
+  ZodToJsonSchemaConverter,
+} from "@orpc/zod/zod4";
 import { handleAuthRoutes } from "./auth/routes";
 import { db, migrateToLatest } from "./database/index";
 import { env } from "./env";
@@ -13,9 +17,11 @@ import { appRouter } from "./router";
 export const rpcHandler = new RPCHandler<ApiContext>(appRouter);
 export const openApiHandler = new OpenAPIHandler<ApiContext>(appRouter, {
   plugins: [
+    new experimental_ZodSmartCoercionPlugin(),
     new OpenAPIReferencePlugin({
       docsPath: "/doc/swagger",
       docsProvider: "swagger",
+      schemaConverters: [new ZodToJsonSchemaConverter()],
       specPath: "/doc/openapi.json",
     }),
   ],
