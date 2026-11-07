@@ -1,46 +1,40 @@
 import { describe, expect, test } from "bun:test";
-import { postSummarySchema } from "./posts";
+import { postCreateSchema, postUpdateSchema } from "./posts";
 
-describe("postSummarySchema", () => {
-  test("rejects a post whose publishedAt is not an ISO datetime", () => {
-    const result = postSummarySchema.safeParse({
+const POST_ID = "0192f1c0-0000-7000-8000-000000000000";
+
+describe("postCreateSchema", () => {
+  test("applies the documented defaults", () => {
+    const parsed = postCreateSchema.parse({ source: "own", title: "Hello" });
+
+    expect(parsed).toEqual({
+      body: null,
       coverImage: null,
-      createdAt: "2026-11-07T10:00:00.000Z",
-      excerpt: "A post.",
+      excerpt: null,
       externalUrl: null,
-      githubMeta: null,
-      id: "0192f1c0-0000-7000-8000-000000000000",
-      linkedinMeta: null,
-      publishedAt: "yesterday",
-      readTimeMin: 1,
-      slug: "hello",
+      linkedinPermalink: null,
+      slug: null,
       source: "own",
-      status: "published",
       tags: [],
       title: "Hello",
-      updatedAt: "2026-11-07T10:00:00.000Z",
     });
-    expect(result.success).toBe(false);
+  });
+});
+
+describe("postUpdateSchema", () => {
+  test("omitted fields stay omitted instead of taking create defaults", () => {
+    const parsed = postUpdateSchema.parse({
+      id: POST_ID,
+      title: "Only the title",
+    });
+
+    expect(parsed).toEqual({ id: POST_ID, title: "Only the title" });
   });
 
-  test("accepts an own post with no external metadata", () => {
-    const result = postSummarySchema.safeParse({
-      coverImage: null,
-      createdAt: "2026-11-07T10:00:00.000Z",
-      excerpt: "A post.",
-      externalUrl: null,
-      githubMeta: null,
-      id: "0192f1c0-0000-7000-8000-000000000000",
-      linkedinMeta: null,
-      publishedAt: "2026-11-07T10:00:00.000Z",
-      readTimeMin: 1,
-      slug: "hello",
-      source: "own",
-      status: "published",
-      tags: [],
-      title: "Hello",
-      updatedAt: "2026-11-07T10:00:00.000Z",
-    });
-    expect(result.success).toBe(true);
+  test("accepts an explicit null so a nullable field can be cleared", () => {
+    const parsed = postUpdateSchema.parse({ excerpt: null, id: POST_ID });
+
+    expect(parsed.excerpt).toBeNull();
+    expect(parsed).toEqual({ excerpt: null, id: POST_ID });
   });
 });

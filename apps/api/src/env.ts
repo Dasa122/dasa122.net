@@ -35,6 +35,20 @@ const schema = z
       .int()
       .positive()
       .default(60),
+    MCP_TOKEN: z
+      .string()
+      .default("")
+      .refine(
+        (value) => {
+          const trimmed = value.trim();
+          return trimmed === "" || (trimmed.length >= 8 && !/\s/.test(trimmed));
+        },
+        {
+          message:
+            "MCP_TOKEN must be empty (disabled) or at least 8 characters with no whitespace",
+        },
+      )
+      .transform((value) => value.trim()),
     MEDIA_DIR: z.string().trim().min(1).default("./media"),
     NODE_ENV: z.string().trim().min(1).default("development"),
     PORT: z.coerce.number().int().min(1).max(65_535).default(3001),
@@ -70,6 +84,7 @@ const schema = z
         clientSecret: raw.LINKEDIN_CLIENT_SECRET,
         syncIntervalMinutes: raw.LINKEDIN_SYNC_INTERVAL_MINUTES,
       },
+      mcpToken: raw.MCP_TOKEN,
       mediaDir: raw.MEDIA_DIR,
       nodeEnv: raw.NODE_ENV,
       port: raw.PORT,

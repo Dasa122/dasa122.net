@@ -1,4 +1,5 @@
 import z from "zod";
+import { withoutDefaults } from "./strip-defaults";
 
 /** A project as the work pages and the admin editor render it. */
 export const projectSchema = z.object({
@@ -31,8 +32,10 @@ export const projectCreateSchema = z.object({
   title: z.string().min(1).max(200),
 });
 
-/** A patch to an existing project; `id` names the row. */
-export const projectUpdateSchema = projectCreateSchema
+/** A patch to an existing project; `id` names the row and omitted fields stay
+ * omitted instead of being reset to a default. */
+export const projectUpdateSchema = z
+  .object(withoutDefaults(projectCreateSchema.shape))
   .partial()
   .extend({ id: z.uuid() });
 
