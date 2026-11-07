@@ -29,6 +29,7 @@ const label =
   "block font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-muted";
 const field =
   "mt-2 w-full border-b border-rule bg-transparent py-2 text-base leading-relaxed text-ink outline-none transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] focus:border-ink";
+const errorText = "font-mono text-[0.75rem] text-ember-text";
 
 /** A trimmed value, or null when the field is blank. */
 function optional(value: string): string | null {
@@ -70,6 +71,7 @@ export function PostEditor({
   const [tags, setTags] = useState(initial.tags.join(", "));
   const [coverImage, setCoverImage] = useState(initial.coverImage);
   const [source, setSource] = useState<"own" | "linkedin">(initial.source);
+  const [error, setError] = useState<string | null>(null);
 
   const values = (): PostEditorValues => ({
     body,
@@ -81,6 +83,21 @@ export function PostEditor({
     title: title.trim(),
   });
 
+  // The buttons are `type="button"`, so the native `required` attribute never
+  // runs; this is the guard that turns an empty title into a specific message.
+  const dispatch = (action: (values: PostEditorValues) => void) => {
+    const next = values();
+    if (next.title.length === 0) {
+      setError("Title is required.");
+      return;
+    }
+    setError(null);
+    action(next);
+  };
+
+  // Editing a published post writes it live, so `Save draft` would be a lie.
+  const saveLabel =
+    initial.status === "published" ? "Save changes" : "Save draft";
   const publishLabel = initial.status === "published" ? "Unpublish" : "Publish";
 
   return (
@@ -88,7 +105,7 @@ export function PostEditor({
       className="mt-10"
       onSubmit={(event) => {
         event.preventDefault();
-        onSave(values());
+        dispatch(onSave);
       }}
     >
       <div className="space-y-8">
@@ -193,17 +210,19 @@ export function PostEditor({
         </div>
       </div>
 
+      {error && <p className={`mt-6 ${errorText}`}>{error}</p>}
+
       <div className="mt-10 flex flex-wrap items-baseline gap-x-6 gap-y-3">
         <Button
           disabled={isPending}
-          onClick={() => onSave(values())}
+          onClick={() => dispatch(onSave)}
           variant="quiet"
         >
-          Save draft
+          {saveLabel}
         </Button>
         <Button
           disabled={isPending}
-          onClick={() => onPublish(values())}
+          onClick={() => dispatch(onPublish)}
           variant="solid"
         >
           {publishLabel}

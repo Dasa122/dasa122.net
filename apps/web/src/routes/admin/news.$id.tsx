@@ -84,19 +84,18 @@ function EditPostPage() {
   const save = (values: PostEditorValues) =>
     update.mutate({ id, ...values }, { onSuccess: refresh });
 
-  const publishNow = (values: PostEditorValues) =>
+  const publishNow = (values: PostEditorValues) => {
+    if (post?.status === "published") {
+      // Unpublish withdraws the row without writing the form first: an edit
+      // should not go live on the way out.
+      unpublish.mutate({ id }, { onSuccess: refresh });
+      return;
+    }
     update.mutate(
       { id, ...values },
-      {
-        onSuccess: () => {
-          if (post?.status === "published") {
-            unpublish.mutate({ id }, { onSuccess: refresh });
-          } else {
-            publish.mutate({ id }, { onSuccess: refresh });
-          }
-        },
-      },
+      { onSuccess: () => publish.mutate({ id }, { onSuccess: refresh }) },
     );
+  };
 
   if (post === null) {
     return <AdminMessage title="News">That post does not exist.</AdminMessage>;

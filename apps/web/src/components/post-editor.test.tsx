@@ -24,9 +24,10 @@ describe("PostEditor", () => {
       />,
     );
     expect(html).toContain("Title");
+    expect(html).not.toContain('disabled=""');
   });
 
-  test("disables the save button while a mutation is pending", () => {
+  test("disables both actions while a mutation is pending", () => {
     const html = renderToStaticMarkup(
       <PostEditor
         initial={empty}
@@ -35,6 +36,6 @@ describe("PostEditor", () => {
         onSave={() => {}}
       />,
     );
-    expect(html).toContain("disabled");
+    expect(html.match(/disabled=""/g)?.length).toBe(2);
   });
 });

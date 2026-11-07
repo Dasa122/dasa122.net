@@ -1,6 +1,7 @@
 import { Section } from "@dasa122/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useRef } from "react";
 import {
   PostEditor,
   type PostEditorInitial,
@@ -34,7 +35,11 @@ function NewPostPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const create = useMutation(orpc.adminPosts.create.mutationOptions());
+  const update = useMutation(orpc.adminPosts.update.mutationOptions());
   const publish = useMutation(orpc.adminPosts.publish.mutationOptions());
+  // A create that succeeded before a publish failure must not be repeated:
+  // retrying publish (or saving) works on the draft it already made.
+  const createdId = useRef<string | null>(null);
 
   const finish = () => {
     void queryClient.invalidateQueries({
@@ -43,14 +48,33 @@ function NewPostPage() {
     void navigate({ to: "/admin/news" });
   };
 
-  const save = (values: PostEditorValues) =>
-    create.mutate(values, { onSuccess: finish });
-
-  const publishNow = (values: PostEditorValues) =>
+  const save = (values: PostEditorValues) => {
+    const id = createdId.current;
+    if (id) {
+      update.mutate({ id, ...values }, { onSuccess: finish });
+      return;
+    }
     create.mutate(values, {
-      onSuccess: (post) =>
-        publish.mutate({ id: post.id }, { onSuccess: finish }),
+      onSuccess: (post) => {
+        createdId.current = post.id;
+        finish();
+      },
     });
+  };
+
+  const publishNow = (values: PostEditorValues) => {
+    const id = createdId.current;
+    if (id) {
+      publish.mutate({ id }, { onSuccess: finish });
+      return;
+    }
+    create.mutate(values, {
+      onSuccess: (post) => {
+        createdId.current = post.id;
+        publish.mutate({ id: post.id }, { onSuccess: finish });
+      },
+    });
+  };
 
   return (
     <main className="flex-1">
@@ -61,13 +85,19 @@ function NewPostPage() {
             <h1 className={`mt-2 ${heading}`}>New post</h1>
           </header>
 
-          {(create.isError || publish.isError) && (
-            <p className={`mt-8 ${errorText}`}>Could not save the post.</p>
+          {(create.isError || update.isError || publish.isError) && (
+            <p className={`mt-8 ${errorText}`}>
+              {publish.isError
+                ? "Saved as a draft, but publishing failed."
+                : "Could not save the post."}
+            </p>
           )}
 
           <PostEditor
             initial={emptyPost}
-            isPending={create.isPending || publish.isPending}
+            isPending={
+              create.isPending || update.isPending || publish.isPending
+            }
             onPublish={publishNow}
             onSave={save}
           />
