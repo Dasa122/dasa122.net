@@ -1,6 +1,7 @@
 import { buttonClassName, Tag } from "@dasa122/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { MarkdownBody } from "../../components/markdown-body";
 import { coverForSlug } from "../../components/project-card";
 import { absoluteUrl, canonicalOrigin } from "../../utils/canonical";
 import { isNotFound } from "../../utils/errors";
@@ -70,11 +71,8 @@ export const Route = createFileRoute("/work/$slug")({
 });
 
 /**
- * The project page shows the summary, the stack, and the outbound links.
- * `projectSchema.body` is raw markdown and the API returns no rendered HTML for
- * projects, so the body is deliberately not rendered: piping markdown into
- * `Prose` (which expects sanitised HTML) would be wrong, and printing the
- * markdown source as text would read as syntax rather than prose.
+ * The project page shows the summary, the rendered body, the stack, and the
+ * outbound links. `bodyHtml` is rendered and sanitised by the API.
  */
 function ProjectPage() {
   const { slug } = Route.useParams();
@@ -114,8 +112,6 @@ function ProjectPage() {
       <div className={frame}>
         <div className="grid gap-12 py-[clamp(3rem,7vw,5rem)] lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-16">
           <div className="min-w-0">
-            {/* The summary is the lead paragraph: it is the only prose the API
-                has for a project, so it carries the page. */}
             <p className="max-w-[62ch] text-lg leading-relaxed text-ink md:text-xl">
               {project.summary}
             </p>
@@ -144,6 +140,12 @@ function ProjectPage() {
                 )}
               </div>
             ) : null}
+
+            {project.bodyHtml !== null && (
+              <div className="mt-12">
+                <MarkdownBody html={project.bodyHtml} />
+              </div>
+            )}
           </div>
 
           {hasRail && (
