@@ -92,22 +92,20 @@ function ProjectPage() {
 
   return (
     <main className="flex-1">
-      {/* The hero is the project's own colour, chosen from the same five covers
+      {/* The hero is the project's own panel, chosen from the same five covers
           the cards use — hashed from the slug, so it never changes under the
-          project. The title sits in the scrim at the bottom, where white clears
-          the contrast bar over every one of the five. */}
+          project. The panel is a neutral surface, so the title is ink. */}
       <section
-        className="relative isolate overflow-hidden"
-        style={{ backgroundImage: coverForSlug(project.slug) }}
+        className="relative isolate overflow-hidden border-b border-[var(--hairline)]"
+        style={{ background: coverForSlug(project.slug) }}
       >
-        <div aria-hidden="true" className="cover-scrim absolute inset-0" />
         <div
           className={`${frame} relative flex min-h-[clamp(16rem,38vh,24rem)] flex-col justify-end pt-24 pb-[clamp(2rem,5vw,3.5rem)]`}
         >
-          <p className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-white">
+          <p className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-muted">
             Project
           </p>
-          <h1 className="mt-4 max-w-[20ch] font-display text-[clamp(2.5rem,7vw,5.5rem)] font-semibold leading-[0.92] tracking-[-0.05em] text-white [overflow-wrap:anywhere]">
+          <h1 className="mt-4 max-w-[20ch] font-display text-[clamp(2.5rem,7vw,5.5rem)] font-semibold leading-[0.92] tracking-[-0.05em] text-ink [overflow-wrap:anywhere]">
             {project.title}
           </h1>
         </div>

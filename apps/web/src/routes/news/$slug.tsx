@@ -129,11 +129,11 @@ function PostPage() {
             {post.title}
           </h1>
 
-          {/* A thin gradient rule closes the header block instead of the old
-              full-width hairline: it points into the body and fades out. */}
+          {/* A thin accent rule closes the header block instead of the old
+              full-width hairline: it points into the body. */}
           <div
             aria-hidden="true"
-            className="mt-8 h-px bg-[linear-gradient(90deg,var(--grad-1),var(--grad-2)_40%,transparent)]"
+            className="mt-8 h-px bg-[var(--acc)] opacity-40"
           />
         </header>
 

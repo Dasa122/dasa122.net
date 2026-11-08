@@ -20,8 +20,10 @@ export function validAccent(value: string | null | undefined): string | null {
 }
 
 /**
- * The accent overrides the static ember trio on the root element. Everything
- * that uses the palette inherits it; an invalid value yields no style at all.
+ * The stored accent replaces the palette's four accent values on the root
+ * element. The legacy `--color-ember*` names are mapped onto these, so every
+ * component (and every flattened surface) follows one value. An invalid value
+ * yields no style at all.
  */
 export function accentStyle(
   value: string | null | undefined,
@@ -31,8 +33,9 @@ export function accentStyle(
     return undefined;
   }
   return {
-    "--color-ember": accent,
-    "--color-ember-fill": accent,
-    "--color-ember-text": accent,
+    "--acc": accent,
+    "--acc-deep": accent,
+    "--acc-fill": accent,
+    "--acc-text": accent,
   } as CSSProperties;
 }

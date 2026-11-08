@@ -57,6 +57,7 @@ function RootComponent() {
 
   return (
     <html
+      data-palette={settings?.palette ?? "ember"}
       lang="en"
       style={accentStyle(settings?.accent)}
       suppressHydrationWarning
@@ -96,17 +97,7 @@ function RootComponent() {
 function NotFound() {
   return (
     <main className="flex flex-1 items-center">
-      <section
-        className="relative isolate w-full overflow-hidden"
-        style={{
-          backgroundImage:
-            "linear-gradient(128deg, var(--cover-1-deep), var(--cover-2-deep) 55%, var(--cover-5-deep))",
-        }}
-      >
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-black/20 bg-[radial-gradient(60rem_40rem_at_20%_0%,oklch(1_0_0/0.16),transparent_65%)]"
-        />
+      <section className="relative isolate w-full overflow-hidden bg-[var(--acc-deep)]">
         <div
           className={`${frame} relative flex min-h-[clamp(24rem,58vh,34rem)] flex-col justify-center py-[clamp(4rem,10vw,7rem)]`}
         >

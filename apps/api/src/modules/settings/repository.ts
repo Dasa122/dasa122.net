@@ -14,6 +14,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   githubUsername: "Dasa122",
   name: "Dasa122",
   ogImage: null,
+  palette: "ember",
   socials: {},
   tagline: "",
 };
