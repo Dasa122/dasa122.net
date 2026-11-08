@@ -750,10 +750,12 @@
       will-change: transform;
     }
 
-    /* Text-sized cards: a few are visible at once, so the rail reads as a
-       horizontal strip rather than one panel per viewport. */
+    /* Text-sized cards sized so a 1440 viewport shows two full cards and half
+       of the third before the pinned scroll takes over: 2.5 x 31.5rem plus two
+       gaps (1.75rem) fills 1440 minus the 7.5rem rail inset. The vw term keeps
+       one comfortable card on narrow screens. */
     .rail-card {
-      flex: 0 0 min(86vw, 22rem);
+      flex: 0 0 min(86vw, 31.5rem);
     }
   }
 }
