@@ -429,8 +429,13 @@
    Progressive blur under the floating header. The layer is a leaf inside the
    header (pinned to its bottom edge) so it scrolls with it and owns no
    children; the mask fades the blur out instead of ending on a hard line.
+
+   The feed's filter bar uses the same treatment, one notch shorter: it is the
+   second sticky surface in the document, and it should read as the same kind
+   of chrome rather than as a second header.
    --------------------------------------------------------------------------- */
-.header-blur {
+.header-blur,
+.feed-bar-blur {
   position: absolute;
   inset-inline: 0;
   top: 100%;
@@ -444,10 +449,37 @@
   mask-image: linear-gradient(to bottom, black, transparent);
 }
 
+.feed-bar-blur {
+  height: 30px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   /* Decorative only: nothing is lost by not rendering it at all. */
-  .header-blur {
+  .header-blur,
+  .feed-bar-blur {
     display: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   The sticky surfaces below the header have to know how tall it is. These are
+   measured heights, in rem so they follow text zoom: 84px on a phone (the
+   menu button is 44px), 87px between 48rem and 52rem where the primary nav
+   wraps to two lines, and 67.5px once it fits on one.
+   --------------------------------------------------------------------------- */
+:root {
+  --header-h: 5.25rem;
+}
+
+@media (width >= 48rem) {
+  :root {
+    --header-h: 5.4375rem;
+  }
+}
+
+@media (width >= 52rem) {
+  :root {
+    --header-h: 4.21875rem;
   }
 }
 
@@ -847,4 +879,83 @@
       color-mix(in oklab, var(--grad-4) 20%, transparent),
       transparent 70%
     );
+}
+
+/* ---------------------------------------------------------------------------
+   The feed's filter bar. It is the second sticky surface in the document:
+   it parks under the header (both use `--header-h`), carries the same glass
+   and the same masked blur band below it, and never overlaps the header.
+   Under reduced motion the blur band is dropped, but the bar still sticks —
+   the filter has to stay reachable while the feed scrolls past it.
+   --------------------------------------------------------------------------- */
+.feed-bar {
+  position: sticky;
+  top: var(--header-h);
+  z-index: 30;
+  background: color-mix(in oklab, var(--color-paper) 72%, transparent);
+  backdrop-filter: blur(18px) saturate(170%);
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+  box-shadow: inset 0 1px 0 var(--glass-hi);
+}
+
+/* A phone scrolls the pills sideways instead of wrapping them onto four
+   lines. The scrollbar is hidden because the clipped last pill already says
+   "there is more"; the row keeps its full height either way. */
+.feed-scroll {
+  overflow-x: auto;
+  scrollbar-width: none;
+  /* The last pill runs under the right edge as a hint that the row scrolls;
+     the fade makes that read as deliberate rather than as a clipped control.
+     Where the pills fit, the fade falls on empty space and is invisible. */
+  mask-image: linear-gradient(to right, black calc(100% - 2.5rem), transparent);
+}
+
+.feed-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* ---------------------------------------------------------------------------
+   The reading progress line. It is driven entirely by the document scroll via
+   `animation-timeline`, so no script runs and the line costs one composited
+   transform. Where the timeline is unsupported the line is not rendered at
+   all, rather than sitting there as a static full-width rule.
+   --------------------------------------------------------------------------- */
+.read-progress {
+  display: none;
+}
+
+@supports (animation-timeline: scroll()) {
+  .read-progress {
+    display: block;
+    position: fixed;
+    inset-inline: 0;
+    top: 0;
+    z-index: 50;
+    height: 2px;
+    transform-origin: 0 50%;
+    background-image: linear-gradient(
+      90deg,
+      var(--grad-1),
+      var(--grad-2) 55%,
+      var(--grad-3)
+    );
+    animation: read-progress linear both;
+    animation-timeline: scroll(root);
+  }
+}
+
+@keyframes read-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* No scroll-linked motion: the page is still readable without the line. */
+  .read-progress {
+    display: none;
+  }
 }
