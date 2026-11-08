@@ -1,7 +1,5 @@
-import { Fragment } from "react";
-
 const link =
-  "font-mono text-[0.625rem] uppercase tracking-[0.14em] text-muted transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] hover:text-ember-text";
+  "inline-flex min-h-9 items-center rounded-[var(--radius-pill)] px-3 font-mono text-[0.625rem] uppercase tracking-[0.14em] text-muted transition-colors duration-300 ease-[var(--ease-out)] hover:bg-[var(--glass-bg-hover)] hover:text-ink";
 
 const links = [
   { href: "/admin", label: "Overview" },
@@ -14,29 +12,19 @@ const links = [
 
 /**
  * The admin section's own navigation. It is a secondary strip under the site
- * header: quiet text links separated by a middle dot, plus sign out.
+ * header: a row of quiet pills, plus sign out.
  */
 export function AdminNav() {
   return (
     <nav
       aria-label="Admin"
-      className="flex flex-wrap items-baseline gap-x-3 gap-y-2 py-4"
+      className="flex flex-wrap items-center gap-x-1 gap-y-1 py-4"
     >
-      {links.map((item, index) => (
-        <Fragment key={item.href}>
-          {index > 0 && (
-            <span aria-hidden="true" className="text-rule">
-              ·
-            </span>
-          )}
-          <a className={link} href={item.href}>
-            {item.label}
-          </a>
-        </Fragment>
+      {links.map((item) => (
+        <a className={link} href={item.href} key={item.href}>
+          {item.label}
+        </a>
       ))}
-      <span aria-hidden="true" className="text-rule">
-        ·
-      </span>
       <form action="/api/auth/logout" method="post">
         <button className={`${link} cursor-pointer`} type="submit">
           Sign out

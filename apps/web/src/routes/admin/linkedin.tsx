@@ -1,17 +1,15 @@
-import { Button, Rule, Section } from "@dasa122/ui";
+import { Button } from "@dasa122/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { AdminHeading } from "../../components/admin-heading";
 import { orpc } from "../../utils/orpc";
 
 const frame = "mx-auto w-full max-w-[80rem] px-6 md:px-10";
-const heading = "text-3xl leading-tight tracking-[-0.01em] md:text-4xl";
-const eyebrow =
-  "font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-muted";
+const label =
+  "block font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-muted";
 const muted = "font-mono text-[0.75rem] text-muted";
 const errorText = "font-mono text-[0.75rem] text-ember-text";
-const field =
-  "mt-2 w-full border-b border-rule bg-transparent py-2 text-base leading-relaxed text-ink outline-none transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] focus:border-ink";
 
 const statusOptions = orpc.adminLinkedin.status.queryOptions({ input: {} });
 
@@ -46,57 +44,51 @@ function AdminLinkedin() {
   return (
     <main className="flex-1">
       <div className={frame}>
-        <Section>
-          <header>
-            <p className={eyebrow}>Admin</p>
-            <h1 className={`mt-2 ${heading}`}>LinkedIn</h1>
-          </header>
+        <div className="pb-[clamp(4rem,10vw,9rem)] pt-6">
+          <AdminHeading title="LinkedIn" />
 
-          <div className="mt-10">
-            {status.isPending && (
-              <p className="py-5 font-mono text-[0.75rem] text-muted">
-                Loading the LinkedIn status…
-              </p>
-            )}
-            {status.isError && (
-              <p className={`py-5 ${errorText}`}>
-                Could not load the LinkedIn status.
-              </p>
-            )}
-          </div>
+          {status.isPending && (
+            <p className="mt-10 font-mono text-[0.75rem] text-muted">
+              Loading the LinkedIn status…
+            </p>
+          )}
+          {status.isError && (
+            <p className={`mt-10 ${errorText}`}>
+              Could not load the LinkedIn status.
+            </p>
+          )}
 
           {status.data && (
             <>
-              <div className="mt-2">
-                <p className={eyebrow}>TIER</p>
-                <p className="mt-2 font-mono text-lg text-ink">
+              <section className="glass-card mt-8 p-6 sm:p-7">
+                <p className={label}>Tier</p>
+                <p className="mt-2 font-display text-2xl tracking-[-0.03em] text-ink">
                   {status.data.tier}
                 </p>
                 {status.data.message !== null && (
-                  <p className="mt-3 max-w-[70ch] text-base leading-relaxed text-ink">
+                  <p className="mt-3 max-w-[70ch] text-base leading-relaxed text-muted">
                     {status.data.message}
                   </p>
                 )}
-              </div>
+              </section>
 
-              <div className="mt-14">
-                <p className={eyebrow}>PUBLISH A LINKEDIN POST</p>
-                <Rule className="mt-4" />
+              <section className="glass-card mt-4 p-6 sm:p-7">
+                <p className={label}>Publish a LinkedIn post</p>
 
                 <form
-                  className="mt-8"
+                  className="mt-6"
                   onSubmit={(event) => {
                     event.preventDefault();
                     publish.mutate({ body, permalink });
                   }}
                 >
-                  <div className="space-y-8">
+                  <div className="space-y-6">
                     <div>
-                      <label className={eyebrow} htmlFor="linkedin-body">
+                      <label className={label} htmlFor="linkedin-body">
                         Body
                       </label>
                       <textarea
-                        className={`${field} min-h-48 resize-y`}
+                        className="admin-field min-h-48 resize-y"
                         id="linkedin-body"
                         onChange={(event) => setBody(event.target.value)}
                         required
@@ -105,11 +97,11 @@ function AdminLinkedin() {
                     </div>
 
                     <div>
-                      <label className={eyebrow} htmlFor="linkedin-permalink">
+                      <label className={label} htmlFor="linkedin-permalink">
                         Permalink
                       </label>
                       <input
-                        className={field}
+                        className="admin-field"
                         id="linkedin-permalink"
                         onChange={(event) => setPermalink(event.target.value)}
                         required
@@ -119,7 +111,7 @@ function AdminLinkedin() {
                     </div>
                   </div>
 
-                  <div className="mt-10 flex flex-wrap items-baseline gap-x-6 gap-y-3">
+                  <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
                     <Button
                       disabled={publish.isPending}
                       onClick={() => publish.mutate({ body, permalink })}
@@ -141,10 +133,10 @@ function AdminLinkedin() {
                     </p>
                   )}
                 </form>
-              </div>
+              </section>
             </>
           )}
-        </Section>
+        </div>
       </div>
     </main>
   );

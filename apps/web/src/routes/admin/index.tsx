@@ -1,15 +1,14 @@
 import type { adminStatsSchema } from "@dasa122/contract";
-import { DataPanel, Meta, Rule, Section } from "@dasa122/ui";
+import { DataPanel, Meta } from "@dasa122/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Fragment } from "react";
+import { AdminHeading } from "../../components/admin-heading";
 import { adminStatsOptions } from "../../utils/admin-stats";
 import { formatNumber, formatRelativeTime } from "../../utils/format";
 
 type SyncState = ReturnType<typeof adminStatsSchema.parse>["lastSync"][number];
 
 const frame = "mx-auto w-full max-w-[80rem] px-6 md:px-10";
-const heading = "text-3xl leading-tight tracking-[-0.01em] md:text-4xl";
 const eyebrow =
   "font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-muted";
 const muted = "font-mono text-[0.75rem] text-muted";
@@ -26,9 +25,9 @@ export const Route = createFileRoute("/admin/")({
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <div>
+    <div className="glass-card p-6 sm:p-7">
       <p className={eyebrow}>{label}</p>
-      <p className="mt-2 font-mono text-4xl leading-none tabular-nums">
+      <p className="mt-3 font-display text-[clamp(2.75rem,7vw,4.5rem)] font-semibold leading-none tracking-[-0.05em] tabular-nums">
         {formatNumber(value)}
       </p>
     </div>
@@ -75,72 +74,63 @@ function AdminDashboard() {
   return (
     <main className="flex-1">
       <div className={frame}>
-        <Section>
-          <header>
-            <p className={eyebrow}>Admin</p>
-            <h1 className={`mt-2 ${heading}`}>Dashboard</h1>
-          </header>
+        <div className="pb-[clamp(4rem,10vw,9rem)] pt-6">
+          <AdminHeading title="Dashboard" />
 
-          <div className="mt-10">
-            <Rule />
-            {stats.isPending && (
-              <p className="py-5 font-mono text-[0.75rem] text-muted">
-                Loading admin data…
-              </p>
-            )}
-            {stats.isError && (
-              <p className={`py-5 ${errorText}`}>Could not load admin data.</p>
-            )}
-          </div>
+          {stats.isPending && (
+            <p className="mt-10 font-mono text-[0.75rem] text-muted">
+              Loading admin data…
+            </p>
+          )}
+          {stats.isError && (
+            <p className={`mt-10 ${errorText}`}>Could not load admin data.</p>
+          )}
 
           {data && (
             <>
-              <div className="mt-10 grid grid-cols-2 gap-x-8">
+              <div className="mt-10 grid gap-4 sm:grid-cols-2">
                 <Stat label="Published" value={data.published} />
                 <Stat label="Drafts" value={data.drafts} />
               </div>
 
-              <div className="mt-12">
-                <h2 className={eyebrow}>By source</h2>
-                <div className="mt-4">
-                  <Rule />
+              <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                <DataPanel title="BY SOURCE">
                   {sources.length === 0 ? (
-                    <p className="py-5 font-mono text-[0.75rem] text-muted">
-                      No posts yet.
-                    </p>
+                    <p className={`py-2 ${muted}`}>No posts yet.</p>
                   ) : (
-                    sources.map(([source, value], index) => (
-                      <Fragment key={source}>
-                        {index > 0 && <Rule />}
-                        <div className="flex items-baseline justify-between py-3">
+                    <div className="divide-y divide-[var(--color-rule)]">
+                      {sources.map(([source, value]) => (
+                        <div
+                          className="flex items-baseline justify-between py-3"
+                          key={source}
+                        >
                           <span className="font-mono text-[0.75rem] uppercase tracking-[0.14em]">
                             {source}
                           </span>
-                          <Meta>{formatNumber(value)}</Meta>
+                          <span className="font-display text-2xl leading-none tabular-nums">
+                            {formatNumber(value)}
+                          </span>
                         </div>
-                      </Fragment>
-                    ))
+                      ))}
+                    </div>
                   )}
-                </div>
-              </div>
+                </DataPanel>
 
-              <div className="mt-12">
                 <DataPanel title="SYNC STATUS">
                   {syncStates.length === 0 ? (
                     <p className={muted}>No sync sources yet.</p>
                   ) : (
-                    syncStates.map((sync, index) => (
-                      <Fragment key={sync.source}>
-                        {index > 0 && <Rule />}
-                        <SyncRow sync={sync} />
-                      </Fragment>
-                    ))
+                    <div className="divide-y divide-[var(--color-rule)]">
+                      {syncStates.map((sync) => (
+                        <SyncRow key={sync.source} sync={sync} />
+                      ))}
+                    </div>
                   )}
                 </DataPanel>
               </div>
             </>
           )}
-        </Section>
+        </div>
       </div>
     </main>
   );

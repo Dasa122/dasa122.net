@@ -21,8 +21,7 @@ const label =
   "block font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-muted";
 const hint = "normal-case tracking-normal";
 const note = "mt-2 font-mono text-[0.6875rem] leading-relaxed text-muted";
-const field =
-  "mt-2 w-full border-b border-rule bg-transparent py-2 text-base leading-relaxed text-ink outline-none transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] focus:border-ink";
+const field = "admin-field";
 
 /** A trimmed value, or null when the field is blank. */
 function optional(value: string): string | null {
@@ -91,7 +90,7 @@ export function ProjectEditor({
 
   return (
     <form
-      className="py-8"
+      className="max-w-[56rem]"
       onSubmit={(event) => {
         event.preventDefault();
         onSave(values());
@@ -197,7 +196,7 @@ export function ProjectEditor({
           <div className="flex items-center gap-3">
             <input
               checked={featured}
-              className="h-4 w-4"
+              className="h-4 w-4 accent-[var(--color-ember)]"
               id={`project-${prefix}-featured`}
               onChange={(event) => setFeatured(event.target.checked)}
               type="checkbox"

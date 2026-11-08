@@ -25,13 +25,16 @@ export function AdminPostRow({
   const meta = [status, date].filter(Boolean).join(" · ");
 
   return (
-    <article className="flex flex-wrap items-baseline gap-x-8 gap-y-2 py-5">
-      <div className="w-20 shrink-0">
+    <article className="flex flex-col gap-2 py-5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6">
+      <div className="flex items-center gap-3">
         <SourceBadge source={post.source} />
+        <span className="sm:hidden">
+          <Meta>{meta}</Meta>
+        </span>
       </div>
 
       <div className="min-w-0 flex-1">
-        <h3 className="text-xl leading-snug tracking-[-0.01em] md:text-2xl">
+        <h3 className="text-lg leading-snug tracking-[-0.02em] [overflow-wrap:anywhere] md:text-xl">
           {post.title}
         </h3>
         {post.tags.length > 0 && (
@@ -43,9 +46,11 @@ export function AdminPostRow({
         )}
       </div>
 
-      <Meta>{meta}</Meta>
+      <div className="hidden sm:block">
+        <Meta>{meta}</Meta>
+      </div>
 
-      <div className="flex items-baseline gap-x-5">
+      <div className="flex items-center gap-x-2">
         {generated ? (
           <Meta>Generated</Meta>
         ) : (
