@@ -1,7 +1,9 @@
-import { Meta, Rule, Section, SourceBadge, Tag } from "@dasa122/ui";
+import { buttonClassName, Meta, SourceBadge, Tag } from "@dasa122/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { MarkdownBody } from "../../components/markdown-body";
+import { PostCard } from "../../components/post-card";
+import type { PostSummary } from "../../components/post-row";
 import { absoluteUrl, canonicalOrigin } from "../../utils/canonical";
 import { isNotFound } from "../../utils/errors";
 import { formatDate } from "../../utils/format";
@@ -9,9 +11,10 @@ import { type api, orpc } from "../../utils/orpc";
 
 type PostDetail = Awaited<ReturnType<typeof api.posts.bySlug>>;
 
-const frame = "mx-auto w-full max-w-[80rem] px-6 md:px-10";
-const quietLink =
-  "font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-muted transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] hover:text-ember-text hover:underline hover:underline-offset-4";
+// The reading column: one measure for the header block and the body. The
+// `Prose` component caps the body itself at 68ch; this wrapper keeps the
+// title, the meta row and the rule on the same left edge as the prose.
+const reading = "mx-auto w-full max-w-[72ch] px-6 md:px-10";
 
 export const Route = createFileRoute("/news/$slug")({
   component: PostPage,
@@ -75,80 +78,85 @@ function PostPage() {
       : null;
   const date = formatDate(post.publishedAt);
 
+  // Whatever the route already fetched: the post's two neighbours. They are
+  // full summaries, so they render as the same cards the feed uses — no extra
+  // request for a "related" list.
+  const related = [post.prev, post.next].filter(
+    (item): item is PostSummary => item !== null && item.slug !== null,
+  );
+
   return (
     <main className="flex-1">
-      <div className={frame}>
-        <article className="py-[clamp(3.5rem,9vw,7rem)]">
-          <header>
-            <SourceBadge source={post.source} />
-            <h1 className="mt-4 max-w-[24ch] font-display text-[clamp(2.75rem,7vw,5rem)] leading-[1.02] tracking-[-0.02em]">
-              {post.title}
-            </h1>
-            <div className="mt-5">
-              <Meta>
-                {date && `${date} · `}
-                {publishedYear && (
-                  <>
-                    <Link
-                      className="transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] hover:text-ember-text hover:underline hover:underline-offset-4"
-                      search={{ year: publishedYear }}
-                      to="/news"
-                    >
-                      {publishedYear}
-                    </Link>
-                    {" · "}
-                  </>
-                )}
-                {post.readTimeMin} min
-              </Meta>
-            </div>
-          </header>
+      {/* The reading progress line is CSS-only: `animation-timeline` reads the
+          document scroll, so nothing here listens to scroll events. */}
+      <div aria-hidden="true" className="read-progress" />
 
-          <div className="mt-10">
-            <MarkdownBody html={post.bodyHtml} />
+      <article
+        className={`${reading} pt-[clamp(2.5rem,6vw,4.5rem)] pb-[clamp(3rem,7vw,5rem)]`}
+      >
+        <header>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2.5">
+            <SourceBadge source={post.source} />
+            <Meta>
+              {date &&
+                (publishedYear ? (
+                  <Link
+                    className="transition-colors duration-300 ease-[var(--ease-out)] hover:text-ember-text hover:underline hover:underline-offset-4"
+                    search={{ year: publishedYear }}
+                    to="/news"
+                  >
+                    {date}
+                  </Link>
+                ) : (
+                  date
+                ))}
+              {date && " · "}
+              {post.readTimeMin} min
+            </Meta>
+            {post.tags.map((tag) => (
+              <Link
+                className="rounded-[var(--radius-pill)] focus-visible:outline-offset-2"
+                key={tag}
+                search={{ tag }}
+                to="/news"
+              >
+                <Tag>{tag}</Tag>
+              </Link>
+            ))}
           </div>
 
-          {post.tags.length > 0 && (
-            <div className="mt-10 flex flex-wrap gap-1.5">
-              {post.tags.map((tag) => (
-                <Link key={tag} search={{ tag }} to="/news">
-                  <Tag>{tag}</Tag>
-                </Link>
-              ))}
-            </div>
-          )}
+          <h1 className="mt-7 font-display text-[clamp(2.5rem,6vw,4.5rem)] font-[600] leading-[0.98] tracking-[-0.04em] [overflow-wrap:anywhere]">
+            {post.title}
+          </h1>
 
-          {(post.prev?.slug || post.next?.slug) && (
-            <nav aria-label="More notes" className="mt-16">
-              <Rule />
-              <div className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-3 pt-5">
-                {post.prev?.slug ? (
-                  <Link
-                    className={quietLink}
-                    params={{ slug: post.prev.slug }}
-                    to="/news/$slug"
-                  >
-                    ← {post.prev.title}
-                  </Link>
-                ) : (
-                  <span />
-                )}
-                {post.next?.slug ? (
-                  <Link
-                    className={quietLink}
-                    params={{ slug: post.next.slug }}
-                    to="/news/$slug"
-                  >
-                    {post.next.title} →
-                  </Link>
-                ) : (
-                  <span />
-                )}
-              </div>
-            </nav>
-          )}
-        </article>
-      </div>
+          {/* A thin gradient rule closes the header block instead of the old
+              full-width hairline: it points into the body and fades out. */}
+          <div
+            aria-hidden="true"
+            className="mt-8 h-px bg-[linear-gradient(90deg,var(--grad-1),var(--grad-2)_40%,transparent)]"
+          />
+        </header>
+
+        <div className="mt-12">
+          <MarkdownBody html={post.bodyHtml} />
+        </div>
+      </article>
+
+      {related.length > 0 && (
+        <nav
+          aria-label="More notes"
+          className={`${reading} pb-[clamp(4rem,10vw,9rem)]`}
+        >
+          <p className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-muted">
+            More notes
+          </p>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            {related.map((item) => (
+              <PostCard key={item.id} post={item} />
+            ))}
+          </div>
+        </nav>
+      )}
     </main>
   );
 }
@@ -156,18 +164,18 @@ function PostPage() {
 function PostNotFound() {
   return (
     <main className="flex-1">
-      <div className={frame}>
-        <Section>
-          <p className="font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-muted">
+      <div className={reading}>
+        <div className="py-[clamp(4rem,12vw,8rem)]">
+          <p className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-muted">
             404
           </p>
-          <div className="mt-4">
-            <Rule />
-          </div>
-          <p className="mt-4 font-mono text-[0.75rem] text-muted">
+          <p className="mt-5 font-display text-[clamp(2rem,5vw,3.5rem)] font-semibold leading-[0.98] tracking-[-0.04em]">
             That note does not exist.
           </p>
-        </Section>
+          <Link className={`${buttonClassName("quiet")} mt-8`} to="/news">
+            All notes
+          </Link>
+        </div>
       </div>
     </main>
   );

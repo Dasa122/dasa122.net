@@ -1,11 +1,13 @@
 import type { postSourceSchema } from "@dasa122/contract";
-import { Button, Rule } from "@dasa122/ui";
+import { Button, Meta, SourceBadge, Tag } from "@dasa122/ui";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Fragment, type ReactNode } from "react";
-import { PostRow } from "../../components/post-row";
+import type { ReactNode } from "react";
+import { PostCard } from "../../components/post-card";
+import type { PostSummary } from "../../components/post-row";
 import { SectionHeading } from "../../components/section-heading";
 import { canonicalOrigin } from "../../utils/canonical";
+import { formatDate } from "../../utils/format";
 import { orpc } from "../../utils/orpc";
 
 type PostSource = ReturnType<typeof postSourceSchema.parse>;
@@ -33,23 +35,16 @@ const DESCRIPTION =
   "Notes, releases, and imported activity — everything published on Dasa122.";
 
 const frame = "mx-auto w-full max-w-[80rem] px-6 md:px-10";
-const page = `${frame} pt-[clamp(2.5rem,6vw,4.5rem)] pb-[clamp(4rem,10vw,9rem)]`;
-const filterLink =
-  "font-mono text-[0.75rem] uppercase tracking-[0.14em] transition-[color,background-color] duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)]";
+const skeleton =
+  "animate-pulse rounded-[var(--radius-md)] bg-[var(--color-surface-2)]";
 
-/** Provenance colour for the filter row, matching the feed's source badge. */
-const sourceTone: Record<PostSource, string> = {
-  github: "text-source-github",
-  linkedin: "text-source-linkedin",
-  own: "text-source-note",
-};
-
-const sourceTint: Record<PostSource, string> = {
-  github: "bg-[color-mix(in_oklab,var(--color-source-github)_12%,transparent)]",
-  linkedin:
-    "bg-[color-mix(in_oklab,var(--color-source-linkedin)_12%,transparent)]",
-  own: "bg-[color-mix(in_oklab,var(--color-source-note)_12%,transparent)]",
-};
+/** The filter pills. Inactive pills are glass; the active one is the gradient. */
+const pill =
+  "inline-flex shrink-0 items-center whitespace-nowrap rounded-[var(--radius-pill)] border px-4 py-2 font-mono text-[0.6875rem] uppercase tracking-[0.14em] transition-[background-color,border-color,color,box-shadow,scale] duration-300 ease-[var(--ease-out)]";
+const pillActive =
+  "border-transparent bg-ember-fill bg-[image:var(--grad-accent)] text-on-accent shadow-[var(--shadow-accent)]";
+const pillIdle =
+  "border-[var(--glass-edge)] bg-[var(--glass-bg)] text-muted shadow-[inset_0_1px_0_var(--glass-hi)] hover:bg-[var(--glass-bg-hover)] hover:text-ink";
 
 function parseSearch(search: Record<string, unknown>): NewsSearch {
   const source = SOURCES.some((option) => option.value === search.source)
@@ -123,44 +118,95 @@ export const Route = createFileRoute("/news/")({
   validateSearch: parseSearch,
 });
 
-function Dot() {
-  return (
-    <span aria-hidden="true" className="text-rule">
-      ·
-    </span>
-  );
-}
-
+/**
+ * One filter as a link. The search params stay in the URL: the pills navigate,
+ * they do not hold client state, so the page is still server-rendered and a
+ * filtered feed is still a shareable address.
+ */
 function FilterLink({
   active = false,
   children,
   search,
-  source,
 }: {
   active?: boolean;
   children: ReactNode;
   search: NewsSearch;
-  source?: PostSource;
 }) {
-  const tone = source
-    ? `${sourceTone[source]} ${
-        active
-          ? `-mx-1.5 rounded-[var(--radius-sm)] px-1.5 ${sourceTint[source]}`
-          : "hover:underline hover:underline-offset-4"
-      }`
-    : active
-      ? "text-ink"
-      : "text-muted hover:text-ember-text";
-
   return (
     <Link
-      aria-current={active ? "true" : undefined}
-      className={`${filterLink} ${tone}`}
+      // Search is part of the filter, so the router's own active state must
+      // consider it; otherwise every pill on a filtered URL claims to be the
+      // current page alongside the one that actually is.
+      activeOptions={{ exact: true, includeSearch: true }}
+      aria-current={active ? "page" : undefined}
+      className={`${pill} ${active ? pillActive : pillIdle}`}
       search={search}
       to="/news"
     >
       {children}
     </Link>
+  );
+}
+
+/**
+ * The list half of the feed: a glass row rather than a hairline. The title link
+ * is stretched over the whole row, so the row is the hit area.
+ */
+function FeedRow({ post }: { post: PostSummary }) {
+  const meta = [formatDate(post.publishedAt), `${post.readTimeMin} min`]
+    .filter(Boolean)
+    .join(" · ");
+
+  return (
+    <article className="glass-panel group relative flex flex-col gap-2.5 rounded-[var(--radius-md)] p-5 transition-[translate,box-shadow] duration-500 ease-[var(--ease-out)] hover:-translate-y-1 hover:shadow-[var(--shadow-lift)] motion-reduce:hover:translate-y-0 sm:p-6">
+      {post.slug && (
+        <Link
+          aria-label={post.title}
+          className="absolute inset-0 z-10 rounded-[var(--radius-md)]"
+          params={{ slug: post.slug }}
+          to="/news/$slug"
+        />
+      )}
+
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <SourceBadge source={post.source} />
+        <Meta>{meta}</Meta>
+      </div>
+
+      <h3 className="[overflow-wrap:anywhere] text-xl leading-[1.15] tracking-[-0.03em] transition-colors duration-300 ease-[var(--ease-out)] group-hover:text-ember-text">
+        {post.title}
+      </h3>
+
+      {post.tags.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {post.tags.map((tag) => (
+            <Tag key={tag}>{tag}</Tag>
+          ))}
+        </div>
+      )}
+    </article>
+  );
+}
+
+/** Three cards and four rows of nothing, at the feed's own proportions. */
+function FeedSkeleton() {
+  return (
+    <div aria-busy="true" className="mt-10">
+      <span className="sr-only">Loading notes…</span>
+      <div
+        aria-hidden="true"
+        className="grid gap-4 sm:grid-cols-2 md:grid-cols-3"
+      >
+        {[0, 1, 2].map((key) => (
+          <div className={`${skeleton} h-44`} key={key} />
+        ))}
+      </div>
+      <div aria-hidden="true" className="mt-6 grid gap-3">
+        {[0, 1, 2, 3].map((key) => (
+          <div className={`${skeleton} h-24`} key={key} />
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -172,97 +218,119 @@ function NewsPage() {
   const posts = feed.data?.pages.flatMap((page) => page.items) ?? [];
   const feedHidden = enabledSources.length === 0;
 
+  const filtered =
+    search.source !== undefined ||
+    search.tag !== undefined ||
+    search.year !== undefined;
+
+  // The first three notes are cards, the rest is the list — the same split the
+  // home page uses.
+  const cards = posts.slice(0, 3);
+  const rest = posts.slice(3);
+  const empty = posts.length === 0 && (feed.isSuccess || feedHidden);
+
   return (
     <main className="flex-1">
-      <div className={page}>
+      <div className={`${frame} pt-[clamp(2.5rem,6vw,4.5rem)] pb-8`}>
         <header>
           <SectionHeading as="h1" label="Journal" title="News" />
-          <p className="mt-5 max-w-[48ch] text-lg leading-relaxed text-ink">
+          <p className="mt-5 max-w-[48ch] text-lg leading-relaxed text-muted">
             Notes, releases, and imported activity — everything published here.
           </p>
         </header>
+      </div>
 
-        <nav
-          aria-label="Filter the feed"
-          className="mt-8 flex flex-wrap items-baseline gap-x-3 gap-y-2"
-        >
-          <FilterLink
-            active={search.source === undefined}
-            search={{ ...search, cursor: undefined, source: undefined }}
-          >
-            All
-          </FilterLink>
-          {SOURCES.map((option) => (
-            <Fragment key={option.value}>
-              <Dot />
+      {/* The filter bar is its own sticky surface, so it spans the page rather
+          than the frame; the pills sit on the site's gutter inside it. */}
+      <div className="feed-bar">
+        <div className={`${frame} feed-scroll`}>
+          <nav aria-label="Filter the feed" className="flex w-max gap-2 py-3">
+            <FilterLink
+              active={search.source === undefined}
+              search={{ ...search, cursor: undefined, source: undefined }}
+            >
+              All
+            </FilterLink>
+            {SOURCES.map((option) => (
               <FilterLink
                 active={search.source === option.value}
+                key={option.value}
                 search={{
                   ...search,
                   cursor: undefined,
                   source: option.value,
                 }}
-                source={option.value}
               >
                 {option.label}
               </FilterLink>
-            </Fragment>
-          ))}
-          {search.tag && (
-            <>
-              <Dot />
+            ))}
+            {search.tag && (
               <FilterLink
                 search={{ ...search, cursor: undefined, tag: undefined }}
               >
                 tagged “{search.tag}” ×
               </FilterLink>
-            </>
-          )}
-          {search.year && (
-            <>
-              <Dot />
+            )}
+            {search.year && (
               <FilterLink
                 search={{ ...search, cursor: undefined, year: undefined }}
               >
                 {search.year} ×
               </FilterLink>
-            </>
-          )}
-        </nav>
+            )}
+          </nav>
+        </div>
+        <div aria-hidden="true" className="feed-bar-blur" />
+      </div>
 
-        <div className="mt-8">
-          <Rule />
-          {feed.isPending && !feedHidden && (
-            <p className="py-5 font-mono text-[0.75rem] text-muted">
-              Loading notes…
-            </p>
-          )}
-          {feed.isError && posts.length === 0 && (
-            <p className="py-5 font-mono text-[0.75rem] text-ember-text">
+      <div className={`${frame} pb-[clamp(4rem,10vw,9rem)]`}>
+        {feed.isPending && !feedHidden && <FeedSkeleton />}
+
+        {feed.isError && posts.length === 0 && (
+          <div className="glass-panel mt-10 flex flex-wrap items-center gap-4 rounded-[var(--radius-md)] p-6">
+            <p className="font-mono text-[0.75rem] text-ember-text">
               Could not load the feed.
             </p>
-          )}
-          {(feed.isSuccess || feedHidden) && posts.length === 0 && (
-            <p className="py-5 font-mono text-[0.75rem] text-muted">
-              Nothing published yet.
-            </p>
-          )}
-          {posts.map((post, index) => (
-            <Fragment key={post.id}>
-              {index > 0 && <Rule />}
-              <PostRow post={post} />
-            </Fragment>
-          ))}
-        </div>
+            <Button onClick={() => feed.refetch()} variant="quiet">
+              Try again
+            </Button>
+          </div>
+        )}
+
+        {empty && (
+          <p className="mt-10 font-mono text-[0.75rem] text-muted">
+            {filtered
+              ? "No notes match that filter."
+              : "Nothing published yet."}
+          </p>
+        )}
+
+        {cards.length > 0 && (
+          <div className="reveal mt-10 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+            {cards.map((post) => (
+              <PostCard key={post.id} post={post} />
+            ))}
+          </div>
+        )}
+
+        {rest.length > 0 && (
+          <ul className="mt-6 grid gap-3">
+            {rest.map((post) => (
+              <li key={post.id}>
+                <FeedRow post={post} />
+              </li>
+            ))}
+          </ul>
+        )}
 
         {feed.isFetchNextPageError && (
-          <p className="py-5 font-mono text-[0.75rem] text-ember-text">
+          <p className="mt-8 font-mono text-[0.75rem] text-ember-text">
             Could not load more notes.
           </p>
         )}
 
         {feed.hasNextPage && (
-          <div className="mt-8">
+          <div className="mt-10 flex justify-center">
             <Button
               disabled={feed.isFetchingNextPage}
               onClick={() => feed.fetchNextPage()}

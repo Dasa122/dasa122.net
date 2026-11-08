@@ -5,13 +5,26 @@ import { Link } from "@tanstack/react-router";
 export type Project = ReturnType<typeof projectSchema.parse>;
 
 /** Five covers, each a hue plus a darker sibling, so cards read as artwork. */
-const COVERS = [
+export const PROJECT_COVERS = [
   "linear-gradient(140deg, var(--cover-1), var(--cover-1-deep))",
   "linear-gradient(140deg, var(--cover-2), var(--cover-2-deep))",
   "linear-gradient(140deg, var(--cover-3), var(--cover-3-deep))",
   "linear-gradient(140deg, var(--cover-4), var(--cover-4-deep))",
   "linear-gradient(140deg, var(--cover-5), var(--cover-5-deep))",
 ] as const;
+
+/**
+ * The cover a project page gets. Cards get theirs from their position, but a
+ * project page has no position, so the slug is hashed instead: the same
+ * project always lands on the same cover, on the server and in the browser.
+ */
+export function coverForSlug(slug: string): string {
+  let hash = 0;
+  for (let i = 0; i < slug.length; i += 1) {
+    hash = (hash * 31 + slug.charCodeAt(i)) % 100_000;
+  }
+  return PROJECT_COVERS[hash % PROJECT_COVERS.length] ?? PROJECT_COVERS[0];
+}
 
 /**
  * A large work card: a gradient cover carrying the project's initial, then the
@@ -29,7 +42,8 @@ export function ProjectCard({
   index: number;
 }) {
   const initial = project.title.trim().charAt(0).toUpperCase() || "·";
-  const cover = COVERS[index % COVERS.length] ?? COVERS[0];
+  const cover =
+    PROJECT_COVERS[index % PROJECT_COVERS.length] ?? PROJECT_COVERS[0];
 
   return (
     <article className="rail-card glass-panel group relative flex flex-col overflow-hidden rounded-[var(--radius-lg)] transition-[translate,box-shadow] duration-500 ease-[var(--ease-out)] hover:-translate-y-1 hover:shadow-[var(--shadow-lift)] motion-reduce:hover:translate-y-0">

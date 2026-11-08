@@ -1,8 +1,6 @@
-import { Rule } from "@dasa122/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Fragment } from "react";
-import { ProjectRow } from "../../components/project-row";
+import { ProjectCard } from "../../components/project-card";
 import { SectionHeading } from "../../components/section-heading";
 import { canonicalOrigin } from "../../utils/canonical";
 import { orpc } from "../../utils/orpc";
@@ -38,8 +36,9 @@ export const Route = createFileRoute("/work/")({
 });
 
 /**
- * The work index as an editorial index: one full-width row per project,
- * separated by hairlines. No grid, no cards.
+ * The work index as a card grid: the same `ProjectCard` the home rail uses, in
+ * two columns from `lg` and one below. Each card gets its cover from its
+ * position, so the sequence is stable between the server and the client.
  */
 export function WorkIndex() {
   const projects = useQuery(projectsOptions);
@@ -50,36 +49,35 @@ export function WorkIndex() {
       <div className={page}>
         <header>
           <SectionHeading as="h1" label="Projects" title="Work" />
-          <p className="mt-5 max-w-[48ch] text-lg leading-relaxed text-ink">
+          <p className="mt-5 max-w-[48ch] text-lg leading-relaxed text-muted">
             Selected projects — what was built, the stack behind it, and where
             to find it.
           </p>
         </header>
 
-        <div className="mt-8">
-          <Rule />
-          {projects.isPending && (
-            <p className="py-5 font-mono text-[0.75rem] text-muted">
-              Loading work…
-            </p>
-          )}
-          {projects.isError && (
-            <p className="py-5 font-mono text-[0.75rem] text-ember-text">
-              Could not load the work.
-            </p>
-          )}
-          {projects.isSuccess && items.length === 0 && (
-            <p className="py-5 font-mono text-[0.75rem] text-muted">
-              Nothing published yet.
-            </p>
-          )}
-          {items.map((project, index) => (
-            <Fragment key={project.id}>
-              {index > 0 && <Rule />}
-              <ProjectRow project={project} />
-            </Fragment>
-          ))}
-        </div>
+        {projects.isPending && (
+          <p className="mt-10 font-mono text-[0.75rem] text-muted">
+            Loading work…
+          </p>
+        )}
+        {projects.isError && (
+          <p className="mt-10 font-mono text-[0.75rem] text-ember-text">
+            Could not load the work.
+          </p>
+        )}
+        {projects.isSuccess && items.length === 0 && (
+          <p className="mt-10 font-mono text-[0.75rem] text-muted">
+            Nothing published yet.
+          </p>
+        )}
+
+        {items.length > 0 && (
+          <div className="reveal mt-10 grid gap-5 lg:grid-cols-2">
+            {items.map((project, index) => (
+              <ProjectCard index={index} key={project.id} project={project} />
+            ))}
+          </div>
+        )}
       </div>
     </main>
   );
