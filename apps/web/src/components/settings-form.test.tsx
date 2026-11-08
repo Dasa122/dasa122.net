@@ -13,6 +13,7 @@ describe("SettingsForm", () => {
           githubUsername: "Dasa122",
           name: "Dasa122",
           ogImage: "",
+          palette: "ember",
           socials: {},
           tagline: "",
         }}

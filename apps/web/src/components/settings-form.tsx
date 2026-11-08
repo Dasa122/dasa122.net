@@ -1,7 +1,8 @@
-import type { postSourceSchema } from "@dasa122/contract";
+import type { paletteSchema, postSourceSchema } from "@dasa122/contract";
 import { Button } from "@dasa122/ui";
 import { useState } from "react";
 
+type Palette = ReturnType<typeof paletteSchema.parse>;
 type PostSource = ReturnType<typeof postSourceSchema.parse>;
 
 /** The settings the form edits, with blank strings standing in for nulls. */
@@ -12,6 +13,7 @@ export type SettingsFormValues = {
   githubUsername: string;
   name: string;
   ogImage: string;
+  palette: Palette;
   socials: {
     email?: string;
     github?: string;
@@ -25,6 +27,15 @@ const SOURCES: { label: string; value: PostSource }[] = [
   { label: "Notes", value: "own" },
   { label: "GitHub", value: "github" },
   { label: "LinkedIn", value: "linkedin" },
+];
+
+/** The five presets, each with the accent (dark-mode value) the swatch shows. */
+const PALETTES: { label: string; value: Palette; swatch: string }[] = [
+  { label: "Ember", swatch: "oklch(0.7 0.16 55)", value: "ember" },
+  { label: "Amber", swatch: "oklch(0.74 0.14 78)", value: "amber" },
+  { label: "Forest", swatch: "oklch(0.68 0.12 158)", value: "forest" },
+  { label: "Slate", swatch: "oklch(0.68 0.04 250)", value: "slate" },
+  { label: "Sand", swatch: "oklch(0.76 0.07 78)", value: "sand" },
 ];
 
 const label =
@@ -56,6 +67,7 @@ export function SettingsForm({
   const [description, setDescription] = useState(initial.description);
   const [ogImage, setOgImage] = useState(initial.ogImage);
   const [accent, setAccent] = useState(initial.accent);
+  const [palette, setPalette] = useState(initial.palette);
   const [enabledSources, setEnabledSources] = useState(initial.enabledSources);
   const [githubUsername, setGithubUsername] = useState(initial.githubUsername);
   const [github, setGithub] = useState(initial.socials.github ?? "");
@@ -70,6 +82,7 @@ export function SettingsForm({
     githubUsername,
     name: name.trim(),
     ogImage,
+    palette,
     socials: { email, github, linkedin, rss },
     tagline,
   });
@@ -149,6 +162,44 @@ export function SettingsForm({
             value={accent}
           />
         </div>
+
+        <fieldset>
+          <legend className={label}>Palette</legend>
+          <p className="mt-2 font-mono text-[0.6875rem] text-muted">
+            The accent family used across the site. A custom accent overrides
+            it.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {PALETTES.map((option) => {
+              const active = palette === option.value;
+              return (
+                <label
+                  className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-[var(--radius-pill)] border px-3 py-2 font-mono text-[0.6875rem] uppercase tracking-[0.12em] transition-colors duration-200 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ember ${
+                    active
+                      ? "border-ember text-ink"
+                      : "border-[var(--glass-edge)] text-muted hover:text-ink"
+                  }`}
+                  key={option.value}
+                >
+                  <input
+                    checked={active}
+                    className="sr-only"
+                    name="palette"
+                    onChange={() => setPalette(option.value)}
+                    type="radio"
+                    value={option.value}
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="h-3.5 w-3.5 shrink-0 rounded-full"
+                    style={{ background: option.swatch }}
+                  />
+                  {option.label}
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
 
         <div>
           <label className={label} htmlFor="settings-github-username">
