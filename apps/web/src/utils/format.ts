@@ -7,6 +7,24 @@ const dateFormatter = new Intl.DateTimeFormat("en-GB", {
 
 const numberFormatter = new Intl.NumberFormat("en-US");
 
+const monthYearFormatter = new Intl.DateTimeFormat("en-GB", {
+  month: "long",
+  timeZone: "UTC",
+  year: "numeric",
+});
+
+/** An ISO datetime as `November 2026`; `null` or unusable input renders "". */
+export function formatMonthYear(value: string | null): string {
+  if (!value) {
+    return "";
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+  return monthYearFormatter.format(date);
+}
+
 /** An ISO datetime as `7 Nov 2026`; `null` or unusable input renders "". */
 export function formatDate(value: string | null): string {
   if (!value) {
