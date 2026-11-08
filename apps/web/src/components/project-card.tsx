@@ -28,26 +28,19 @@ export function coverForSlug(slug: string): string {
 }
 
 /**
- * A large work card: a solid tinted cover carrying the project's initial, then
- * the title, the summary and the stack. The title link is stretched over the
- * whole card, so the card is the hit area.
+ * A compact work card: a monogram chip and the title, then the summary and the
+ * stack. There is no cover panel, so the text sizes the card and a row of them
+ * reads as a strip instead of one panel per screen. The title link is stretched
+ * over the whole card, so the card is the hit area.
  *
- * The cover comes from the card's position (`index % 5`), so the sequence is
- * stable as data changes and server render matches hydration.
+ * `index` stays in the signature even though the card no longer takes a cover
+ * from its position; callers keep passing it.
  */
-export function ProjectCard({
-  project,
-  index,
-}: {
-  project: Project;
-  index: number;
-}) {
+export function ProjectCard({ project }: { project: Project; index: number }) {
   const initial = project.title.trim().charAt(0).toUpperCase() || "·";
-  const cover =
-    PROJECT_COVERS[index % PROJECT_COVERS.length] ?? PROJECT_COVERS[0];
 
   return (
-    <article className="rail-card glass-panel group relative flex flex-col overflow-hidden rounded-[var(--radius-lg)] transition-[translate,box-shadow] duration-500 ease-[var(--ease-out)] hover:-translate-y-1 hover:shadow-[var(--shadow-lift)] motion-reduce:hover:translate-y-0">
+    <article className="rail-card glass-panel group relative flex flex-col overflow-hidden rounded-[var(--radius-lg)] p-5 transition-[translate,box-shadow] duration-500 ease-[var(--ease-out)] hover:-translate-y-1 hover:shadow-[var(--shadow-lift)] motion-reduce:hover:translate-y-0 sm:p-6">
       <Link
         aria-label={project.title}
         className="absolute inset-0 z-10 rounded-[var(--radius-lg)]"
@@ -55,29 +48,26 @@ export function ProjectCard({
         to="/work/$slug"
       />
 
-      <div
-        aria-hidden="true"
-        className="rail-card-cover relative flex items-center justify-center border-b border-[var(--hairline)]"
-        style={{ background: cover }}
-      >
-        <span className="relative font-display text-[clamp(2.75rem,4.5vw,3.75rem)] font-semibold leading-none tracking-[-0.04em] text-ember-text">
+      <div className="flex items-center gap-3">
+        <span
+          aria-hidden="true"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-sm)] border border-[var(--hairline)] bg-[var(--color-surface-2)] font-display text-[1rem] font-semibold leading-none text-ember-text"
+        >
           {initial}
         </span>
-      </div>
-
-      <div className="flex flex-1 flex-col gap-3 p-6">
-        <h3 className="[overflow-wrap:anywhere] text-2xl leading-[1.02] tracking-[-0.045em]">
+        <h3 className="min-w-0 [overflow-wrap:anywhere] text-2xl leading-[1.02] tracking-[-0.045em]">
           {project.title}
         </h3>
-        <p className="max-w-[46ch] text-muted">{project.summary}</p>
-        {project.stack.length > 0 && (
-          <div className="mt-auto flex flex-wrap gap-1.5 pt-3">
-            {project.stack.map((item) => (
-              <Tag key={item}>{item}</Tag>
-            ))}
-          </div>
-        )}
       </div>
+
+      <p className="mt-3 max-w-[46ch] text-muted">{project.summary}</p>
+      {project.stack.length > 0 && (
+        <div className="mt-auto flex flex-wrap gap-1.5 pt-4">
+          {project.stack.map((item) => (
+            <Tag key={item}>{item}</Tag>
+          ))}
+        </div>
+      )}
     </article>
   );
 }
