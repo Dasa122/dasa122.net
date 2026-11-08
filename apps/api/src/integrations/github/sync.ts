@@ -7,8 +7,10 @@ import type { SyncResult } from "../types";
 import { upsertGeneratedPost } from "../upsert-post";
 import {
   fetchPublicEvents,
+  fetchPulls,
   fetchRepos,
   type GitHubEvent,
+  type GitHubPull,
   type GitHubRepo,
 } from "./client";
 import { mapGitHubEvent } from "./map";
@@ -26,6 +28,7 @@ const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 export type GitHubSnapshot = {
   activity: Array<{ count: number; date: string }>;
   languages: Record<string, number>;
+  pulls: GitHubPull[];
   repos: Array<{
     description: string | null;
     forks: number;
@@ -36,12 +39,32 @@ export type GitHubSnapshot = {
     url: string;
   }>;
   syncedAt: string;
-  totalCommits: number;
 };
 
-function pushSize(event: GitHubEvent): number {
+const PULL_LIMIT = 30;
+
+/**
+ * How many commits one `PushEvent` represents.
+ *
+ * GitHub stopped sending `payload.size` on public events, so every push used
+ * to count as zero and both `activity` and the old commit total read as a lie.
+ * Fall back in order: `distinct_size`, the length of `commits`, then 1 — a
+ * push is at minimum one push, even when the payload carries no detail at all.
+ */
+export function pushSize(event: GitHubEvent): number {
   const size = event.payload.size;
-  return typeof size === "number" && Number.isFinite(size) ? size : 0;
+  if (typeof size === "number" && Number.isFinite(size)) {
+    return size;
+  }
+  const distinct = event.payload.distinct_size;
+  if (typeof distinct === "number" && Number.isFinite(distinct)) {
+    return distinct;
+  }
+  const commits = event.payload.commits;
+  if (Array.isArray(commits)) {
+    return commits.length;
+  }
+  return 1;
 }
 
 function repoUrl(name: string): string {
@@ -66,6 +89,7 @@ function isNamedRepo(repo: unknown): repo is GitHubRepo {
 function buildSnapshot(
   events: GitHubEvent[],
   rawRepos: GitHubRepo[],
+  rawPulls: GitHubPull[],
   now: Date,
 ): GitHubSnapshot {
   const repos = rawRepos
@@ -99,14 +123,12 @@ function buildSnapshot(
   ).toISOString();
   const cutoffDate = cutoff.slice(0, 10);
   const perDay = new Map<string, number>();
-  let totalCommits = 0;
 
   for (const event of events) {
     if (event.type !== "PushEvent") {
       continue;
     }
     const size = pushSize(event);
-    totalCommits += size;
     const date = event.created_at.slice(0, 10);
     if (DATE_PATTERN.test(date) && date >= cutoffDate) {
       perDay.set(date, (perDay.get(date) ?? 0) + size);
@@ -117,12 +139,18 @@ function buildSnapshot(
     .map(([date, count]) => ({ count, date }))
     .sort((left, right) => left.date.localeCompare(right.date));
 
+  // The search endpoint already sorts by `updated`, but the snapshot must not
+  // depend on that: sort defensively and keep only the newest 30.
+  const pulls = [...rawPulls]
+    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
+    .slice(0, PULL_LIMIT);
+
   return {
     activity,
     languages,
+    pulls,
     repos,
     syncedAt: now.toISOString(),
-    totalCommits,
   };
 }
 
@@ -131,6 +159,24 @@ async function writeSetting(key: string, value: unknown): Promise<void> {
     .insert(settingsTable)
     .values({ key, value })
     .onConflictDoUpdate({ set: { value }, target: settingsTable.key });
+}
+
+async function readSetting(key: string): Promise<unknown> {
+  const [row] = await db
+    .select({ value: settingsTable.value })
+    .from(settingsTable)
+    .where(eq(settingsTable.key, key))
+    .limit(1);
+  return row?.value ?? null;
+}
+
+/** The `pulls` array of a previous snapshot, or none when it is unusable. */
+function previousPulls(snapshot: unknown): GitHubPull[] {
+  if (typeof snapshot !== "object" || snapshot === null) {
+    return [];
+  }
+  const pulls = (snapshot as { pulls?: unknown }).pulls;
+  return Array.isArray(pulls) ? (pulls as GitHubPull[]) : [];
 }
 
 async function writeSyncState(
@@ -189,9 +235,25 @@ export async function syncGitHub(options: {
       options.token,
       options.fetchImpl,
     );
+
+    // A search failure must not fail the run: the page keeps the pulls it
+    // already had rather than blanking them.
+    let pulls: GitHubPull[] | null = null;
+    try {
+      pulls = await fetchPulls(
+        options.username,
+        options.token,
+        options.fetchImpl,
+      );
+    } catch (error) {
+      logger.warn({ err: error }, "github pulls fetch failed; keeping cache");
+    }
+    const resolvedPulls =
+      pulls ?? previousPulls(await readSetting(GITHUB_OVERVIEW_KEY));
+
     await writeSetting(
       GITHUB_OVERVIEW_KEY,
-      buildSnapshot(events, repos, new Date()),
+      buildSnapshot(events, repos, resolvedPulls, new Date()),
     );
     await writeSyncState("ok", null);
 

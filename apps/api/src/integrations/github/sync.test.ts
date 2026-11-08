@@ -14,7 +14,7 @@ import {
 } from "../../database/schema";
 import { env } from "../../env";
 import { createTestDb, migrateTestDb, resetTables } from "../../test/helpers";
-import { startGitHubScheduler, syncGitHub } from "./sync";
+import { pushSize, startGitHubScheduler, syncGitHub } from "./sync";
 
 type FetchImpl = typeof fetch;
 
@@ -49,12 +49,19 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-/** The R5 stub: events for the events URL, an empty list for the repos URL. */
-const stubFetch = (events: unknown[], repos: unknown[] = []): FetchImpl =>
+/** The R5 stub: events for the events URL, empty lists elsewhere. */
+const stubFetch = (
+  events: unknown[],
+  repos: unknown[] = [],
+  pulls: unknown[] = [],
+): FetchImpl =>
   (async (input: RequestInfo | URL) => {
     const url = String(input);
     if (url.includes("/events/public")) {
       return jsonResponse(events);
+    }
+    if (url.includes("/search/issues")) {
+      return jsonResponse({ items: pulls });
     }
     if (url.includes("/repos")) {
       return jsonResponse(repos);
@@ -96,6 +103,50 @@ function push(id: string, size: number, createdAt: string) {
     },
   };
 }
+
+/** A search-result item, shaped the way `GET /search/issues` returns one. */
+function pullItem(number: number, updatedAt: string) {
+  return {
+    body: "Fixes all the things.",
+    created_at: "2026-11-05T09:00:00Z",
+    html_url: `https://github.com/Dasa122/dasa122.net/pull/${number}`,
+    number,
+    pull_request: { merged_at: "2026-11-06T09:00:00Z" },
+    repository_url: "https://api.github.com/repos/Dasa122/dasa122.net",
+    state: "closed",
+    title: `Pull ${number}`,
+    updated_at: updatedAt,
+  };
+}
+
+describe("pushSize", () => {
+  test("the real payload shape, with no size or commits, counts as one push", () => {
+    const event = {
+      ...pushEvent,
+      payload: {
+        before: "0000000",
+        head: "1111111",
+        push_id: 6789,
+        ref: "refs/heads/main",
+        repository_id: 12_345,
+      },
+    };
+
+    expect(pushSize(event)).toBe(1);
+  });
+
+  test("distinct_size wins over the one-push floor", () => {
+    const event = {
+      ...pushEvent,
+      payload: {
+        distinct_size: 4,
+        ref: "refs/heads/main",
+      },
+    };
+
+    expect(pushSize(event)).toBe(4);
+  });
+});
 
 async function readSetting(key: string): Promise<unknown> {
   const [row] = await testDb
@@ -213,20 +264,81 @@ describe("syncGitHub", () => {
     const snapshot = (await readSetting("github:overview")) as {
       activity: Array<{ count: number; date: string }>;
       languages: Record<string, number>;
+      pulls: unknown[];
       repos: Array<{ name: string }>;
       syncedAt: string;
-      totalCommits: number;
     };
     expect(snapshot.repos.map((repo) => repo.name)).toEqual([
       "Dasa122/dasa122.net",
     ]);
     expect(snapshot.languages).toEqual({ TypeScript: 1 });
-    expect(snapshot.totalCommits).toBe(5);
+    expect(snapshot.pulls).toEqual([]);
     expect(snapshot.activity).toEqual([
       { count: 2, date: "2026-11-05" },
       { count: 3, date: "2026-11-06" },
     ]);
     expect(typeof snapshot.syncedAt).toBe("string");
+  });
+
+  test("caches at most 30 pulls, newest update first", async () => {
+    const items = Array.from({ length: 35 }, (_, index) =>
+      pullItem(
+        index + 1,
+        `2026-11-${String((index % 28) + 1).padStart(2, "0")}T09:00:00Z`,
+      ),
+    );
+    const result = await syncGitHub({
+      fetchImpl: stubFetch([pushEvent], [], items),
+      username: "Dasa122",
+    });
+
+    expect(result.error).toBeNull();
+    const snapshot = (await readSetting("github:overview")) as {
+      pulls: Array<{
+        bodyHtml: string | null;
+        number: number;
+        repo: string;
+        state: string;
+        updatedAt: string;
+      }>;
+    };
+    expect(snapshot.pulls).toHaveLength(30);
+    expect(snapshot.pulls[0]?.updatedAt).toBe("2026-11-28T09:00:00.000Z");
+    expect(snapshot.pulls[0]?.bodyHtml).toContain("Fixes all the things.");
+    expect(snapshot.pulls[0]?.repo).toBe("Dasa122/dasa122.net");
+  });
+
+  test("a failed pulls fetch keeps the previous pulls and does not fail the run", async () => {
+    await syncGitHub({
+      fetchImpl: stubFetch(
+        [pushEvent],
+        [],
+        [pullItem(7, "2026-11-06T09:00:00Z")],
+      ),
+      username: "Dasa122",
+    });
+
+    const failingPulls = (async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/search/issues")) {
+        throw new Error("search down");
+      }
+      if (url.includes("/events/public")) {
+        return jsonResponse([pushEvent]);
+      }
+      return jsonResponse([]);
+    }) as unknown as FetchImpl;
+
+    const result = await syncGitHub({
+      fetchImpl: failingPulls,
+      username: "Dasa122",
+    });
+
+    expect(result.error).toBeNull();
+    const snapshot = (await readSetting("github:overview")) as {
+      pulls: Array<{ number: number }>;
+    };
+    expect(snapshot.pulls.map((pull) => pull.number)).toEqual([7]);
   });
 
   test("a malformed repositories payload is filtered, never thrown", async () => {
