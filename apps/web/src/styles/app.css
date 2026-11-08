@@ -58,6 +58,16 @@
      gradient in both palettes. */
   --color-on-accent: oklch(0.99 0.002 285);
 
+  /* Covers are decorative fields, never text backgrounds, so they keep the
+     vivid lightness in both palettes (white display initials sit on them,
+     under a scrim). This is why they are not `--grad-1..4`, which light mode
+     darkens for text contrast. */
+  --cover-1: oklch(0.66 0.21 285);
+  --cover-2: oklch(0.7 0.24 340);
+  --cover-3: oklch(0.8 0.17 62);
+  --cover-4: oklch(0.82 0.15 165);
+  --cover-5: oklch(0.58 0.2 255);
+
   --radius-sm: 10px;
   --radius-md: 16px;
   --radius-lg: 24px;
@@ -225,85 +235,15 @@
   }
 }
 
-/* The hook (`use-reveal.ts`) adds `.reveal-vt` where view timelines exist and
-   `data-reveal="in"` where they do not; both paths start from a visible base
-   state, so nothing is ever stranded at opacity 0. */
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    [data-reveal].reveal-vt {
-      opacity: 1;
-      transform: none;
-      transition: none;
-      animation: reveal-in linear both;
-      animation-timeline: view();
-      animation-range: entry 5% entry 65%;
-    }
-  }
-}
-
-@keyframes reveal-in {
-  from {
-    opacity: 0;
-    transform: translateY(18px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
 @media (prefers-reduced-motion: no-preference) {
   html {
     scroll-behavior: smooth;
   }
-
-  [data-reveal] {
-    opacity: 0;
-    transform: translateY(18px);
-    transition:
-      opacity 700ms var(--ease-out),
-      transform 700ms var(--ease-out);
-    transition-delay: calc(var(--reveal-i, 0) * 70ms);
-  }
-
-  [data-reveal="in"] {
-    opacity: 1;
-    transform: none;
-  }
-
-  .hero-wipe {
-    animation: wipe-x 900ms var(--ease-out) both;
-  }
-}
-
-@keyframes wipe-x {
-  from {
-    clip-path: inset(-30% 100% -30% 0);
-  }
-  to {
-    clip-path: inset(-30% -10% -30% 0);
-  }
-}
-
-@keyframes draw {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
-
-.draw-in {
-  transform-origin: left;
-  animation: draw 700ms var(--ease-out) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .reveal,
-  .animate-ping,
-  .draw-in,
-  .hero-wipe {
+  .animate-ping {
     animation: none;
   }
 }
@@ -409,28 +349,11 @@
   -webkit-backdrop-filter: blur(16px) saturate(160%);
 }
 
-/* The kicker pins under the header while its section's rows scroll past. It
-   only does so above md: on a phone the header is two lines tall. */
+/* The mono label above a section heading. It is part of the heading block,
+   not a pinned band: a sticky label needs an opaque backing, and an opaque
+   rectangle over a gradient canvas reads as a bug. */
 .section-kicker {
   display: block;
-}
-
-@media (width >= 48rem) {
-  .section-kicker {
-    position: sticky;
-    top: 4.3rem;
-    z-index: 10;
-    background: color-mix(in oklab, var(--color-paper) 78%, transparent);
-    backdrop-filter: blur(8px);
-  }
-}
-
-/* Between md and ~52rem the primary nav wraps to a second line, which makes
-   the header taller; the kicker's offset follows it. */
-@media (width >= 48rem) and (width < 52rem) {
-  .section-kicker {
-    top: 5.5rem;
-  }
 }
 
 /* ---------------------------------------------------------------------------
@@ -715,8 +638,7 @@
 /* ---------------------------------------------------------------------------
    The hero's colour field: three big blobs, blurred hard enough to read as
    light rather than as shapes. The parent clips them.
-   --------------------------------------------------------------------------- */
-.hero-glow {
+   --------------------------------------------------------------------------- */ .hero-glow {
   background:
     radial-gradient(
       40rem 32rem at 22% 18%,
@@ -752,5 +674,169 @@
       30rem 26rem at 56% 96%,
       color-mix(in oklab, var(--grad-3) 18%, transparent),
       transparent 62%
+    );
+}
+
+/* ---------------------------------------------------------------------------
+   The home page. Three full-bleed bands, one pinned rail, and a gradient word.
+   --------------------------------------------------------------------------- */
+
+/* The page's side inset, shared by the frame and the rail's full-bleed track
+   so the two line up exactly. */
+:root {
+  --frame-pad: 1.5rem;
+  /* Above the frame's 80rem cap the inset grows with the gutter, so the rail
+     starts on the same line as the centred content. Below it, max() keeps the
+     plain page padding. */
+  --rail-pad: max(
+    var(--frame-pad),
+    calc((100vw - 80rem) / 2 + var(--frame-pad))
+  );
+}
+
+@media (width >= 48rem) {
+  :root {
+    --frame-pad: 2.5rem;
+  }
+}
+
+/* One phrase of the headline in the gradient. Both stops clear 4.5:1 in both
+   palettes (dark 5.8 / 6.6, light 5.8 / 5.3), which a third tangerine stop
+   would not: darkened for the light paper it turns brown. */
+.gradient-word {
+  background-image: linear-gradient(100deg, var(--grad-1), var(--grad-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@media (forced-colors: active) {
+  .gradient-word {
+    background-image: none;
+    color: CanvasText;
+  }
+}
+
+/* --- The work rail ------------------------------------------------------- */
+
+.rail-card-cover {
+  aspect-ratio: 16 / 10;
+}
+
+/* A bottom scrim over the cover gradient, so the initial and the card edge
+   sit on something rather than on the brightest part of the gradient. */
+.cover-scrim {
+  background: linear-gradient(
+    to top,
+    oklch(0 0 0 / 0.42),
+    oklch(0 0 0 / 0) 62%
+  );
+}
+
+.rail {
+  position: relative;
+}
+
+.rail-track {
+  display: grid;
+  gap: 1rem;
+  max-width: 80rem;
+  margin-inline: auto;
+  padding-inline: var(--frame-pad);
+  padding-block: 0.5rem 1rem;
+}
+
+@media (width >= 48rem) {
+  .rail-track {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+}
+
+@media (width >= 80rem) {
+  .rail-track {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* The pinned rail is an enhancement, not the layout: without view timelines,
+   below md, or when motion is reduced, the cards stay in that plain grid. */
+@media (prefers-reduced-motion: no-preference) and (width >= 48rem) {
+  @supports (animation-timeline: view()) {
+    .rail {
+      height: 300vh;
+      view-timeline-name: --rail;
+      view-timeline-axis: block;
+    }
+
+    .rail-viewport {
+      position: sticky;
+      top: 0;
+      display: flex;
+      height: 100dvh;
+      flex-direction: column;
+      justify-content: center;
+      gap: clamp(1.5rem, 4vh, 3rem);
+      overflow: hidden;
+      padding-block: 5rem 3rem;
+    }
+
+    .rail-track {
+      display: flex;
+      flex: none;
+      flex-wrap: nowrap;
+      width: max-content;
+      max-width: none;
+      margin: 0;
+      padding-inline: var(--rail-pad);
+      gap: clamp(1rem, 2vw, 1.75rem);
+      animation: rail-x linear both;
+      animation-timeline: --rail;
+      animation-range: contain 0% contain 100%;
+      will-change: transform;
+    }
+
+    .rail-card {
+      flex: 0 0 clamp(20rem, 80vw, 64rem);
+    }
+
+    /* In the rail the card is a wide landscape panel, so the cover gets a
+       viewport-relative height instead of the grid's 16:10 ratio. */
+    .rail-card-cover {
+      height: clamp(10rem, 30vh, 17rem);
+      aspect-ratio: auto;
+    }
+  }
+}
+
+@keyframes rail-x {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    /* Never scroll backwards when the track is narrower than the viewport. */
+    transform: translateX(min(0px, calc(-100% + 100vw)));
+  }
+}
+
+/* --- The stats band ------------------------------------------------------ */
+
+.stats-band {
+  border-block: 1px solid var(--hairline);
+  background-color: color-mix(
+    in oklab,
+    var(--color-paper) 86%,
+    var(--color-surface-2)
+  );
+  background-image:
+    radial-gradient(
+      42rem 26rem at 10% 0%,
+      color-mix(in oklab, var(--grad-1) 22%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      38rem 24rem at 90% 100%,
+      color-mix(in oklab, var(--grad-2) 16%, transparent),
+      transparent 70%
     );
 }
