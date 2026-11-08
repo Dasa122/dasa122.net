@@ -1,5 +1,8 @@
+import { renderMarkdown } from "../../util/markdown";
+
 const GITHUB_API = "https://api.github.com";
 const PER_PAGE = 100;
+const PULL_PER_PAGE = 50;
 const REQUEST_TIMEOUT_MS = 15_000;
 
 /** A public event from `GET /users/:username/events/public`. */
@@ -205,4 +208,152 @@ export async function fetchReadmeHtml(
     throw new Error("github_api_error");
   }
   return await response.text();
+}
+
+/** One pull request from `GET /search/issues?q=author:…+type:pr`. */
+export type GitHubPull = {
+  bodyHtml: string | null;
+  createdAt: string;
+  merged: boolean;
+  number: number;
+  repo: string;
+  state: "open" | "closed";
+  title: string;
+  updatedAt: string;
+  url: string;
+};
+
+const PULL_BODY_MAX_CHARS = 40_000;
+const PULL_BODY_NOTICE = "<p><em>Description truncated.</em></p>";
+
+/**
+ * Caps a rendered PR description below the contract's practical payload size.
+ * The cut lands on a completed tag so an open `<div>` cannot swallow the
+ * notice, and the notice itself is inside the budget.
+ */
+function capPullBody(html: string): string {
+  if (html.length <= PULL_BODY_MAX_CHARS) {
+    return html;
+  }
+  const budget = PULL_BODY_MAX_CHARS - PULL_BODY_NOTICE.length;
+  const cut = html.slice(0, budget);
+  const lastTagEnd = cut.lastIndexOf(">");
+  const base =
+    lastTagEnd >= budget / 2
+      ? cut.slice(0, lastTagEnd + 1)
+      : cut.replace(/<[^>]*$/, "");
+  return `${base}${PULL_BODY_NOTICE}`;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+/** `https://api.github.com/repos/owner/name` → `owner/name`. */
+function repoFromApiUrl(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const match = /\/repos\/([^/]+)\/([^/]+)\/?$/.exec(value);
+  return match === null ? null : `${match[1]}/${match[2]}`;
+}
+
+/** An ISO datetime normalised to UTC, or `null` for unusable input. */
+function isoDate(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+/** A web URL, or `null` for a non-string, malformed or non-http(s) value. */
+function webUrl(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:"
+      ? url.toString()
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Maps one search result to the page's pull shape. Anything malformed yields
+ * `null` so one bad item is skipped rather than failing the whole sync.
+ */
+async function mapPull(item: unknown): Promise<GitHubPull | null> {
+  const record = asRecord(item);
+  if (record === null) {
+    return null;
+  }
+  const number = record.number;
+  const state = record.state;
+  const mergedAt = asRecord(record.pull_request)?.merged_at;
+  const title = record.title;
+  const url = webUrl(record.html_url);
+  const repo = repoFromApiUrl(record.repository_url);
+  const createdAt = isoDate(record.created_at);
+  const updatedAt = isoDate(record.updated_at);
+  if (
+    typeof number !== "number" ||
+    !Number.isInteger(number) ||
+    (state !== "open" && state !== "closed") ||
+    typeof title !== "string" ||
+    url === null ||
+    repo === null ||
+    createdAt === null ||
+    updatedAt === null
+  ) {
+    return null;
+  }
+
+  const body = typeof record.body === "string" ? record.body.trim() : "";
+  return {
+    bodyHtml: body === "" ? null : capPullBody(await renderMarkdown(body)),
+    createdAt,
+    merged: mergedAt !== null && mergedAt !== undefined,
+    number,
+    repo,
+    state,
+    title,
+    updatedAt,
+    url,
+  };
+}
+
+/**
+ * The pull requests authored by `username`, newest update first. GitHub's
+ * search API returns 30 results per page by default; 50 is the page size we
+ * ask for. A malformed item is skipped, and a non-object payload yields none.
+ */
+export async function fetchPulls(
+  username: string,
+  token?: string,
+  fetchImpl: typeof fetch = globalThis.fetch,
+): Promise<GitHubPull[]> {
+  const query = encodeURIComponent(`author:${username} type:pr`);
+  const data = await getJson(
+    `${GITHUB_API}/search/issues?q=${query}&sort=updated&order=desc&per_page=${PULL_PER_PAGE}`,
+    token,
+    fetchImpl,
+  );
+  const items = asRecord(data)?.items;
+  if (!Array.isArray(items)) {
+    return [];
+  }
+  const pulls: GitHubPull[] = [];
+  for (const item of items) {
+    const pull = await mapPull(item);
+    if (pull !== null) {
+      pulls.push(pull);
+    }
+  }
+  return pulls;
 }

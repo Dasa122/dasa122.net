@@ -27,13 +27,27 @@ export const githubRepoDetailSchema = z.object({
   updatedAt: z.iso.datetime(),
 });
 
-/** The GitHub overview page: the repository snapshot, the language counts,
- * the commit total, and the per-day activity for the last 90 days. All of it
- * comes from the cached snapshot — never from a live GitHub call. */
+/** One pull request authored by the profile owner, as the GitHub page lists
+ * it. `bodyHtml` is already rendered and sanitised by the API. */
+export const githubPullSchema = z.object({
+  bodyHtml: z.string().nullable(),
+  createdAt: z.iso.datetime(),
+  merged: z.boolean(),
+  number: z.number().int(),
+  repo: z.string(),
+  state: z.enum(["open", "closed"]),
+  title: z.string(),
+  updatedAt: z.iso.datetime(),
+  url: z.url(),
+});
+
+/** The GitHub overview page: the pull requests the page renders, plus the
+ * repository snapshot the work and admin surfaces read. All of it comes from
+ * the cached snapshot — never from a live GitHub call. */
 export const githubOverviewSchema = z.object({
   activity: z.array(z.object({ count: z.number().int(), date: z.iso.date() })),
   languages: z.record(z.string(), z.number().int()),
   lastSyncedAt: z.iso.datetime().nullable(),
+  pulls: z.array(githubPullSchema),
   repos: z.array(githubRepoSchema),
-  totalCommits: z.number().int(),
 });

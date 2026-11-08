@@ -1156,3 +1156,37 @@
     animation: none;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   The pull request description that opens under a row. The row itself is a
+   real button; the panel is `hidden` while collapsed. Opening it is a short
+   opacity-and-lift reveal, and under reduced motion it is an instant toggle:
+   no animation, no translation, same content.
+   --------------------------------------------------------------------------- */
+.pull-reveal {
+  animation: pull-reveal 180ms var(--ease-out) both;
+}
+
+@keyframes pull-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* A PR description can embed screenshots and badges: never wider than the
+   column, whatever the author uploaded. */
+.pull-body img {
+  height: auto;
+  max-width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pull-reveal {
+    animation: none;
+  }
+}

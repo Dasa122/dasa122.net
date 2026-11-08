@@ -28,6 +28,18 @@ function AdminLinkedin() {
 
   const [body, setBody] = useState("");
   const [permalink, setPermalink] = useState("");
+  const [importUrl, setImportUrl] = useState("");
+
+  const importPost = useMutation(
+    orpc.adminLinkedin.import.mutationOptions({
+      onSuccess: () => {
+        setImportUrl("");
+        void queryClient.invalidateQueries({
+          queryKey: orpc.posts.list.key(),
+        });
+      },
+    }),
+  );
 
   const publish = useMutation(
     orpc.adminLinkedin.publish.mutationOptions({
@@ -70,6 +82,62 @@ function AdminLinkedin() {
                     {status.data.message}
                   </p>
                 )}
+              </section>
+
+              <section className="glass-card mt-4 p-6 sm:p-7">
+                <p className={label}>Import from URL</p>
+                <p className="mt-3 max-w-[70ch] text-base leading-relaxed text-muted">
+                  Paste the link to one of your posts. LinkedIn has no public
+                  feed, so posts cannot be discovered automatically — only
+                  imported.
+                </p>
+
+                <form
+                  className="mt-6"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    importPost.mutate({ permalink: importUrl });
+                  }}
+                >
+                  <label className={label} htmlFor="linkedin-import-url">
+                    Post URL
+                  </label>
+                  <input
+                    className="admin-field"
+                    id="linkedin-import-url"
+                    onChange={(event) => setImportUrl(event.target.value)}
+                    placeholder="https://www.linkedin.com/posts/…-activity-…"
+                    required
+                    type="url"
+                    value={importUrl}
+                  />
+
+                  <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+                    <Button
+                      disabled={importPost.isPending}
+                      onClick={() =>
+                        importPost.mutate({ permalink: importUrl })
+                      }
+                      variant="solid"
+                    >
+                      {importPost.isPending ? "Importing…" : "Import"}
+                    </Button>
+                    {importPost.isPending && (
+                      <span className={muted}>
+                        Fetching the post from LinkedIn…
+                      </span>
+                    )}
+                    {importPost.isSuccess && (
+                      <span className={muted}>Imported into the feed.</span>
+                    )}
+                  </div>
+
+                  {importPost.isError && (
+                    <p className={`mt-4 ${errorText}`}>
+                      {importPost.error.message}
+                    </p>
+                  )}
+                </form>
               </section>
 
               <section className="glass-card mt-4 p-6 sm:p-7">

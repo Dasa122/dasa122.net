@@ -39,6 +39,11 @@ export const adminLinkedInPublishSchema = z.object({
   permalink: z.url(),
 });
 
+/** A LinkedIn post imported from its public permalink. */
+export const adminLinkedInImportSchema = z.object({
+  permalink: z.url(),
+});
+
 /** The GitHub admin panel: token presence, the cached repository snapshot,
  * and the last sync's state. Never triggers an outbound GitHub call. */
 export const adminGithubStatusSchema = z.object({

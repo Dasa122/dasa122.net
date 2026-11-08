@@ -36,8 +36,8 @@ const EMPTY_OVERVIEW: GitHubOverview = {
   activity: [],
   languages: {},
   lastSyncedAt: null,
+  pulls: [],
   repos: [],
-  totalCommits: 0,
 };
 
 async function readSetting(key: string): Promise<unknown> {
@@ -65,10 +65,10 @@ function toOverview(
     activity: Array.isArray(snapshot.activity) ? snapshot.activity : [],
     languages: snapshot.languages ?? {},
     lastSyncedAt: snapshot.syncedAt ?? null,
+    pulls: Array.isArray(snapshot.pulls) ? snapshot.pulls : [],
     repos: (Array.isArray(snapshot.repos) ? snapshot.repos : []).map(
       (repo) => ({ ...repo, featured: featuredSet.has(repo.name) }),
     ),
-    totalCommits: snapshot.totalCommits ?? 0,
   };
 }
 

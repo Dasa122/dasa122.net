@@ -34,7 +34,9 @@ const STACK = [
 // One options object per query, shared by the loader's prefetch and the
 // component's `useQuery` so the server render is never fetched twice.
 const postsOptions = orpc.posts.list.queryOptions({
-  input: { limit: POSTS_LIMIT },
+  // The home page is a journal of things I wrote, not a feed of imported
+  // GitHub events; `/news` still lists every source.
+  input: { limit: POSTS_LIMIT, sources: ["own", "linkedin"] },
 });
 const projectsOptions = orpc.projects.list.queryOptions({ input: {} });
 // The root loader has already cached this, so reading it here is free.

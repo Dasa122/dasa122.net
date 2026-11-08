@@ -55,17 +55,29 @@ const REPO = {
 const SNAPSHOT = {
   activity: [{ count: 2, date: "2026-11-06" }],
   languages: { TypeScript: 1 },
+  pulls: [
+    {
+      bodyHtml: "<p>Fixes the thing.</p>",
+      createdAt: "2026-11-05T10:00:00.000Z",
+      merged: true,
+      number: 12,
+      repo: "Dasa122/dasa122.net",
+      state: "closed",
+      title: "Fix the thing",
+      updatedAt: "2026-11-06T10:00:00.000Z",
+      url: "https://github.com/Dasa122/dasa122.net/pull/12",
+    },
+  ],
   repos: [REPO],
   syncedAt: "2026-11-06T12:00:00.000Z",
-  totalCommits: 12,
 };
 
 const EMPTY_OVERVIEW = {
   activity: [],
   languages: {},
   lastSyncedAt: null,
+  pulls: [],
   repos: [],
-  totalCommits: 0,
 };
 
 beforeAll(async () => {
@@ -160,8 +172,8 @@ describe("github.overview", () => {
       activity: SNAPSHOT.activity,
       languages: SNAPSHOT.languages,
       lastSyncedAt: SNAPSHOT.syncedAt,
+      pulls: SNAPSHOT.pulls,
       repos: SNAPSHOT.repos.map((repo) => ({ ...repo, featured: false })),
-      totalCommits: SNAPSHOT.totalCommits,
     });
   });
 });
