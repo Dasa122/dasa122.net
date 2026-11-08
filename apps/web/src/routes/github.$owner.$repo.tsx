@@ -172,21 +172,20 @@ function RepoPage() {
 
       {repo && (
         <>
-          {/* The band is the repository's own colour, hashed from its full
-              name, so it never changes under the same repository. The title
-              sits in the scrim, where white clears the bar over all five. */}
+          {/* The band is the repository's own panel, hashed from its full name,
+              so it never changes under the same repository. It is a neutral
+              surface, so the title and kicker are ink and muted. */}
           <section
-            className="relative isolate overflow-hidden"
-            style={{ backgroundImage: coverForSlug(`${owner}/${name}`) }}
+            className="relative isolate overflow-hidden border-b border-[var(--hairline)]"
+            style={{ background: coverForSlug(`${owner}/${name}`) }}
           >
-            <div aria-hidden="true" className="cover-scrim absolute inset-0" />
             <div
               className={`${frame} relative flex min-h-[clamp(13rem,30vh,20rem)] flex-col justify-end pt-20 pb-[clamp(1.75rem,4vw,3rem)]`}
             >
-              <p className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-white/85">
+              <p className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-muted">
                 {repo.owner} · Repository
               </p>
-              <h1 className="mt-3 max-w-[24ch] font-display text-[clamp(2.25rem,6vw,4.5rem)] font-semibold leading-[0.94] tracking-[-0.05em] text-white [overflow-wrap:anywhere]">
+              <h1 className="mt-3 max-w-[24ch] font-display text-[clamp(2.25rem,6vw,4.5rem)] font-semibold leading-[0.94] tracking-[-0.05em] text-ink [overflow-wrap:anywhere]">
                 {repo.name}
               </h1>
             </div>

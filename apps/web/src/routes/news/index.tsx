@@ -38,11 +38,11 @@ const frame = "mx-auto w-full max-w-[80rem] px-6 md:px-10";
 const skeleton =
   "animate-pulse rounded-[var(--radius-md)] bg-[var(--color-surface-2)]";
 
-/** The filter pills. Inactive pills are glass; the active one is the gradient. */
+/** The filter pills. Inactive pills are glass; the active one is the solid
+ * accent fill. */
 const pill =
   "inline-flex shrink-0 items-center whitespace-nowrap rounded-[var(--radius-pill)] border px-4 py-2 font-mono text-[0.6875rem] uppercase tracking-[0.14em] transition-[background-color,border-color,color,box-shadow,scale] duration-300 ease-[var(--ease-out)]";
-const pillActive =
-  "border-transparent bg-ember-fill bg-[image:var(--grad-accent)] text-on-accent shadow-[var(--shadow-accent)]";
+const pillActive = "border-transparent bg-ember-fill text-on-accent";
 const pillIdle =
   "border-[var(--glass-edge)] bg-[var(--glass-bg)] text-muted shadow-[inset_0_1px_0_var(--glass-hi)] hover:bg-[var(--glass-bg-hover)] hover:text-ink";
 

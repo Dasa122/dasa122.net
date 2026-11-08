@@ -29,14 +29,6 @@ const sourceKickers = {
   own: "NOTES",
 } as const;
 
-/** One gradient per timeline dot, cycled through the same family as the site. */
-const DOT_FILLS = [
-  "var(--grad-1)",
-  "var(--grad-2)",
-  "var(--grad-3)",
-  "var(--grad-4)",
-] as const;
-
 // One options object shared by the loader's prefetch and the component's
 // `useQuery` so the server render is never fetched twice.
 const siteOptions = orpc.site.get.queryOptions({ input: {} });
@@ -86,7 +78,7 @@ export function AboutPage() {
 }
 
 /**
- * The statement's last word carries the gradient. Splitting on the last space
+ * The statement's last word carries the accent. Splitting on the last space
  * keeps the copy exactly as it is stored — nothing is rewritten to fit the
  * treatment, and a one-word statement simply renders plain.
  */
@@ -97,7 +89,7 @@ function Statement({ text }: { text: string }) {
   return (
     <>
       {words.length > 0 && `${words.join(" ")} `}
-      <span className="gradient-word">{last}</span>
+      <span className="text-ember-text">{last}</span>
     </>
   );
 }
@@ -175,15 +167,9 @@ function AboutContent({ settings }: { settings: Settings }) {
           <SectionHeading label="01" title="Currently" />
           {settings.enabledSources.length > 0 ? (
             <ol className="timeline mt-6 space-y-7">
-              {settings.enabledSources.map((source, index) => (
+              {settings.enabledSources.map((source) => (
                 <li className="timeline-item" key={source}>
-                  <span
-                    aria-hidden="true"
-                    className="timeline-dot"
-                    style={{
-                      background: DOT_FILLS[index % DOT_FILLS.length],
-                    }}
-                  />
+                  <span aria-hidden="true" className="timeline-dot" />
                   <p className="text-lg leading-snug text-ink">
                     {sourceLabels[source]}
                   </p>

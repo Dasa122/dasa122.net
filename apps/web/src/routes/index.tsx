@@ -139,15 +139,11 @@ function HomePage() {
       {/* Hero: one screen, the headline, three ways in, and the colour field. */}
       {/* ---------------------------------------------------------------- */}
       <section className="hero-stage relative isolate flex min-h-[calc(100dvh-4.25rem)] items-center overflow-hidden">
-        <div
-          aria-hidden="true"
-          className="hero-glow hero-parallax pointer-events-none absolute inset-0 -z-10"
-        />
         <div className={`${frame} relative py-20`}>
           <Eyebrow>Notes · Projects · GitHub</Eyebrow>
 
           <h1 className="mt-6 max-w-[16ch] font-display text-[clamp(2.75rem,8.5vw,7.5rem)] font-semibold leading-[0.92] tracking-[-0.045em]">
-            Software, built <span className="gradient-word">carefully</span>.
+            Software, built <span className="text-ember-text">carefully</span>.
           </h1>
 
           <p className="mt-8 max-w-[44ch] text-lg leading-relaxed text-muted md:text-xl">
@@ -305,7 +301,7 @@ function HomePage() {
       <section className={`${frame} py-[clamp(5rem,12vw,9rem)]`}>
         <h2 className="max-w-[20ch] font-display text-[clamp(2.25rem,6vw,4.5rem)] font-semibold leading-[0.94] tracking-[-0.045em]">
           The web is better when it is{" "}
-          <span className="gradient-word">built carefully</span>.
+          <span className="text-ember-text">built carefully</span>.
         </h2>
         <div className="mt-10 flex flex-wrap items-center gap-3">
           <Link className={buttonClassName("solid")} to="/news">

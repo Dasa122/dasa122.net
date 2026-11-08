@@ -4,13 +4,14 @@ import { Link } from "@tanstack/react-router";
 
 export type Project = ReturnType<typeof projectSchema.parse>;
 
-/** Five covers, each a hue plus a darker sibling, so cards read as artwork. */
+/** Five solid covers: a neutral surface tinted at most 6% toward the accent,
+ * each a step lighter than the last. Only lightness varies, never hue. */
 export const PROJECT_COVERS = [
-  "linear-gradient(140deg, var(--cover-1), var(--cover-1-deep))",
-  "linear-gradient(140deg, var(--cover-2), var(--cover-2-deep))",
-  "linear-gradient(140deg, var(--cover-3), var(--cover-3-deep))",
-  "linear-gradient(140deg, var(--cover-4), var(--cover-4-deep))",
-  "linear-gradient(140deg, var(--cover-5), var(--cover-5-deep))",
+  "color-mix(in oklab, var(--acc) 6%, var(--color-surface-3))",
+  "color-mix(in oklab, color-mix(in oklab, var(--acc) 6%, var(--color-surface-3)) 96%, var(--color-paper))",
+  "color-mix(in oklab, color-mix(in oklab, var(--acc) 6%, var(--color-surface-3)) 92%, var(--color-paper))",
+  "color-mix(in oklab, color-mix(in oklab, var(--acc) 6%, var(--color-surface-3)) 88%, var(--color-paper))",
+  "color-mix(in oklab, color-mix(in oklab, var(--acc) 6%, var(--color-surface-3)) 84%, var(--color-paper))",
 ] as const;
 
 /**
@@ -27,9 +28,9 @@ export function coverForSlug(slug: string): string {
 }
 
 /**
- * A large work card: a gradient cover carrying the project's initial, then the
- * title, the summary and the stack. The title link is stretched over the whole
- * card, so the card is the hit area.
+ * A large work card: a solid tinted cover carrying the project's initial, then
+ * the title, the summary and the stack. The title link is stretched over the
+ * whole card, so the card is the hit area.
  *
  * The cover comes from the card's position (`index % 5`), so the sequence is
  * stable as data changes and server render matches hydration.
@@ -56,11 +57,10 @@ export function ProjectCard({
 
       <div
         aria-hidden="true"
-        className="rail-card-cover relative flex items-end p-6"
-        style={{ backgroundImage: cover }}
+        className="rail-card-cover relative flex items-center justify-center border-b border-[var(--hairline)]"
+        style={{ background: cover }}
       >
-        <div aria-hidden="true" className="cover-scrim absolute inset-0" />
-        <span className="relative font-display text-[clamp(4rem,8vw,7rem)] font-semibold leading-none tracking-[-0.06em] text-white drop-shadow-[0_2px_18px_rgba(0,0,0,0.35)]">
+        <span className="relative font-display text-[clamp(2.75rem,4.5vw,3.75rem)] font-semibold leading-none tracking-[-0.04em] text-ember-text">
           {initial}
         </span>
       </div>

@@ -6,7 +6,7 @@ const prose =
      heading, so it is dropped rather than restyled. */
   "[&_a.anchor]:hidden " +
   "[&_svg]:inline-block [&_svg]:align-middle " +
-  "[&_blockquote]:my-7 [&_blockquote]:border-l-2 [&_blockquote]:border-ember [&_blockquote]:[border-image:linear-gradient(to_bottom,var(--grad-1),var(--grad-2))_1] [&_blockquote]:pl-5 [&_blockquote]:font-sans [&_blockquote]:italic [&_blockquote]:text-muted " +
+  "[&_blockquote]:my-7 [&_blockquote]:border-l-2 [&_blockquote]:border-ember [&_blockquote]:pl-5 [&_blockquote]:font-sans [&_blockquote]:italic [&_blockquote]:text-muted " +
   "[&_code]:rounded-[var(--radius-sm)] [&_code]:bg-[var(--color-surface-2)] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.9em] [&_code]:[overflow-wrap:anywhere] " +
   "[&_h2]:mt-12 [&_h2]:mb-4 [&_h2]:font-display [&_h2]:text-3xl [&_h2]:font-semibold [&_h2]:leading-[1.05] [&_h2]:tracking-[-0.045em] " +
   "[&_h3]:mt-8 [&_h3]:mb-3 [&_h3]:font-display [&_h3]:text-2xl [&_h3]:font-semibold [&_h3]:leading-[1.1] [&_h3]:tracking-[-0.035em] " +

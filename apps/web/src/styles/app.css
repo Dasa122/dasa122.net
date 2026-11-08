@@ -3,13 +3,13 @@
 @source "../../../../packages/ui/src";
 
 /* ---------------------------------------------------------------------------
-   The design system: one sans for everything, a navy-to-cyan gradient
-   family for the colour, and glass for every surface that floats.
+   The design system: one sans for everything, a single accent family per
+   palette, and glass for every surface that floats.
 
    The legacy token names (`paper`, `ink`, `rule`, `ember`, `surface-2/3`,
-   `muted`) are kept because every page and primitive uses them; only their
-   values changed. `--grad-*` is the new gradient family, used for display
-   words, blobs and the primary button.
+   `muted`) are kept because every page and primitive uses them; the accent
+   names are mapped onto the four `--acc*` values a palette sets, so a preset
+   changes the whole site without touching a component.
    --------------------------------------------------------------------------- */
 @theme static {
   --font-sans:
@@ -20,62 +20,29 @@
   --font-mono:
     "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
 
-  /* Light palette. `.dark` (below) is the shipped default. The neutrals carry
-     a faint blue cast (hue 255) rather than the old violet one. */
+  /* Light neutrals carry a faint blue cast (hue 255). */
   --color-paper: oklch(0.985 0.002 255);
   --color-surface-2: oklch(0.965 0.004 255);
   --color-surface-3: oklch(0.94 0.006 255);
   --color-ink: oklch(0.12 0.02 255);
   --color-muted: oklch(0.44 0.02 255);
   --color-rule: oklch(0.12 0.02 255 / 0.12);
-  --color-ember: oklch(0.52 0.17 255);
-  --color-ember-text: oklch(0.48 0.16 252);
-  --color-ember-fill: oklch(0.5 0.16 255);
 
-  /* Gradient family: navy → blue → azure → cyan. Light values are darkened
-     so both stops of the display gradient clear 4.5:1 on the near-white
-     paper (measured 9.2:1 and 7.1:1). */
-  --grad-1: oklch(0.4 0.14 262);
-  --grad-2: oklch(0.46 0.16 250);
-  --grad-3: oklch(0.5 0.14 232);
-  --grad-4: oklch(0.52 0.11 205);
+  /* The accent names every component already uses, mapped onto whichever
+     palette (or stored custom accent) is active on the root element. */
+  --color-ember: var(--acc);
+  --color-ember-text: var(--acc-text);
+  --color-ember-fill: var(--acc-fill);
 
-  /* The button gradient is deliberately darker than --grad-1/2: near-white on
-     the decorative stops measures 3.3:1, and white-on-fill text must clear
-     4.5:1. Same hues, 0.42/0.52 lightness, measured 5.5:1. */
-  --grad-accent: linear-gradient(
-    135deg,
-    oklch(0.42 0.15 262),
-    oklch(0.52 0.16 255)
-  );
-
-  /* Feed provenance only. Note follows the (possibly custom) ember text
-     colour, so an accent override carries through; GitHub keeps its semantic
-     green and LinkedIn takes the azure end of the same blue family. Each
+  /* Feed provenance only, deliberately independent of the palette: GitHub
+     keeps its green, LinkedIn its azure, and a note keeps its own teal. Each
      clears 4.5:1 on its own 12% tint. */
-  --color-source-note: var(--color-ember-text);
+  --color-source-note: oklch(0.46 0.11 190);
   --color-source-github: oklch(0.46 0.12 165);
   --color-source-linkedin: oklch(0.44 0.13 232);
 
-  /* Text on the accent fill. Never remapped: the fill is a fixed dark
-     gradient in both palettes. */
+  /* Text on a solid accent fill, in both palettes. */
   --color-on-accent: oklch(0.99 0.002 255);
-
-  /* Covers rotate through five blue/teal hue families, one per card
-     (index % 5), and each pairs its hue with a darker sibling for the
-     diagonal. White display initials sit on them in both palettes, so every
-     base stop clears 4.5:1 against white (0.52–0.54 lightness). They are not
-     `--grad-1..4`, which light mode darkens for text contrast. */
-  --cover-1: oklch(0.52 0.16 265);
-  --cover-1-deep: oklch(0.36 0.14 265);
-  --cover-2: oklch(0.53 0.15 248);
-  --cover-2-deep: oklch(0.36 0.14 248);
-  --cover-3: oklch(0.54 0.13 232);
-  --cover-3-deep: oklch(0.37 0.12 232);
-  --cover-4: oklch(0.53 0.12 214);
-  --cover-4-deep: oklch(0.36 0.11 214);
-  --cover-5: oklch(0.54 0.11 195);
-  --cover-5-deep: oklch(0.37 0.1 195);
 
   --radius-sm: 10px;
   --radius-md: 16px;
@@ -88,8 +55,6 @@
   --shadow-lift:
     0 1px 1px oklch(0.2 0.02 255 / 0.06),
     0 18px 44px -22px oklch(0.2 0.06 255 / 0.32);
-  --shadow-accent: 0 12px 34px -14px oklch(0.5 0.16 255 / 0.55);
-  --shadow-accent-hover: 0 18px 46px -14px oklch(0.58 0.16 250 / 0.6);
 
   /* Glass chrome: a translucent surface, an inset top highlight and a border
      that is light on light and barely-there on dark. */
@@ -97,6 +62,90 @@
   --glass-bg-hover: oklch(1 0 0 / 0.78);
   --glass-edge: oklch(0.12 0.02 255 / 0.1);
   --glass-hi: oklch(1 0 0 / 0.7);
+}
+
+/* ---------------------------------------------------------------------------
+   Palette presets. `data-palette` on <html> (set in `__root.tsx`) selects one;
+   `ember` is the default. Each block sets the same four values:
+
+     --acc       the accent itself (rules, dots, progress)
+     --acc-text  the accent used as text on the page background
+     --acc-fill  a solid fill that carries near-white text
+     --acc-deep  a dark tint for panels and surfaces
+
+   Light values live on the palette selector; `.dark` overrides the same four.
+   Every text/fill pair was measured against its own mode's paper.
+   --------------------------------------------------------------------------- */
+:root,
+[data-palette="ember"] {
+  --acc: oklch(0.58 0.17 55);
+  --acc-text: oklch(0.48 0.15 52);
+  --acc-fill: oklch(0.52 0.17 50);
+  --acc-deep: oklch(0.4 0.1 50);
+}
+
+[data-palette="amber"] {
+  --acc: oklch(0.6 0.14 75);
+  --acc-text: oklch(0.48 0.12 72);
+  --acc-fill: oklch(0.53 0.13 70);
+  --acc-deep: oklch(0.4 0.08 70);
+}
+
+[data-palette="forest"] {
+  --acc: oklch(0.56 0.11 155);
+  --acc-text: oklch(0.44 0.09 155);
+  --acc-fill: oklch(0.48 0.1 155);
+  --acc-deep: oklch(0.34 0.06 152);
+}
+
+[data-palette="slate"] {
+  --acc: oklch(0.55 0.04 250);
+  --acc-text: oklch(0.44 0.04 250);
+  --acc-fill: oklch(0.47 0.04 250);
+  --acc-deep: oklch(0.33 0.03 250);
+}
+
+[data-palette="sand"] {
+  --acc: oklch(0.62 0.07 75);
+  --acc-text: oklch(0.47 0.06 72);
+  --acc-fill: oklch(0.52 0.07 70);
+  --acc-deep: oklch(0.4 0.05 68);
+}
+
+.dark,
+.dark[data-palette="ember"] {
+  --acc: oklch(0.7 0.16 55);
+  --acc-text: oklch(0.78 0.14 60);
+  --acc-fill: oklch(0.55 0.16 52);
+  --acc-deep: oklch(0.38 0.09 50);
+}
+
+.dark[data-palette="amber"] {
+  --acc: oklch(0.74 0.14 78);
+  --acc-text: oklch(0.79 0.12 78);
+  --acc-fill: oklch(0.55 0.13 72);
+  --acc-deep: oklch(0.38 0.07 70);
+}
+
+.dark[data-palette="forest"] {
+  --acc: oklch(0.68 0.12 158);
+  --acc-text: oklch(0.76 0.11 158);
+  --acc-fill: oklch(0.52 0.11 155);
+  --acc-deep: oklch(0.34 0.06 155);
+}
+
+.dark[data-palette="slate"] {
+  --acc: oklch(0.68 0.04 250);
+  --acc-text: oklch(0.76 0.04 250);
+  --acc-fill: oklch(0.52 0.04 250);
+  --acc-deep: oklch(0.34 0.03 250);
+}
+
+.dark[data-palette="sand"] {
+  --acc: oklch(0.76 0.07 78);
+  --acc-text: oklch(0.8 0.06 78);
+  --acc-fill: oklch(0.55 0.07 72);
+  --acc-deep: oklch(0.38 0.05 70);
 }
 
 :root {
@@ -121,17 +170,8 @@
   --color-ink: oklch(0.97 0.005 255);
   --color-muted: oklch(0.72 0.02 255);
   --color-rule: oklch(1 0 0 / 0.1);
-  --color-ember: oklch(0.58 0.17 255);
-  --color-ember-text: oklch(0.72 0.14 250);
-  --color-ember-fill: oklch(0.5 0.16 255);
 
-  /* Same navy → blue → azure → cyan ramp, lifted for a near-black canvas:
-     the two display stops measure 5.0:1 and 6.4:1. */
-  --grad-1: oklch(0.6 0.16 262);
-  --grad-2: oklch(0.66 0.16 250);
-  --grad-3: oklch(0.72 0.14 232);
-  --grad-4: oklch(0.78 0.12 202);
-
+  --color-source-note: oklch(0.78 0.1 190);
   --color-source-github: oklch(0.8 0.15 165);
   --color-source-linkedin: oklch(0.78 0.12 225);
 
@@ -142,8 +182,6 @@
 
   --shadow-lift:
     0 1px 1px oklch(0 0 0 / 0.4), 0 20px 50px -24px oklch(0 0 0 / 0.9);
-  --shadow-accent: 0 14px 40px -16px oklch(0.5 0.18 255 / 0.65);
-  --shadow-accent-hover: 0 20px 54px -16px oklch(0.6 0.18 250 / 0.7);
 }
 
 @layer base {
@@ -151,30 +189,19 @@
     background: var(--surface);
   }
 
-  /* Three large, heavily blurred colour fields under a near-black canvas. They
-     are fixed, so the page scrolls through the colour rather than dragging it
-     along. `background-color` is the fallback under the gradients. */
+  /* One accent pool in the top-left corner, at ~6% — a tint in the paper, not
+     a light show. Fixed, so the page scrolls through it. `background-color`
+     is the fallback under it. */
   body {
     display: flex;
     min-height: 100dvh;
     flex-direction: column;
     background-color: var(--surface);
-    background-image:
-      radial-gradient(
-        58rem 40rem at 8% -12%,
-        color-mix(in oklab, var(--grad-1) 16%, transparent),
-        transparent 66%
-      ),
-      radial-gradient(
-        46rem 34rem at 94% 2%,
-        color-mix(in oklab, var(--grad-2) 13%, transparent),
-        transparent 62%
-      ),
-      radial-gradient(
-        44rem 34rem at 52% 108%,
-        color-mix(in oklab, var(--grad-3) 11%, transparent),
-        transparent 60%
-      );
+    background-image: radial-gradient(
+      60rem 42rem at 10% -10%,
+      color-mix(in oklab, var(--acc) 6%, transparent),
+      transparent 66%
+    );
     background-attachment: fixed;
     background-repeat: no-repeat;
     color: var(--text);
@@ -260,7 +287,7 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Scroll-driven motion: a gradient progress line at the very top, and the
+   Scroll-driven motion: a solid accent progress line at the very top, and the
    hero stage that shrinks and fades as it leaves. Both are decorative; the
    fallback is simply no animation and no hidden content.
    --------------------------------------------------------------------------- */
@@ -277,12 +304,7 @@
       z-index: 50;
       display: block;
       height: 2px;
-      background: linear-gradient(
-        90deg,
-        var(--grad-1),
-        var(--grad-2),
-        var(--grad-3)
-      );
+      background: var(--acc);
       transform-origin: left;
       pointer-events: none;
       animation: grow-x linear both;
@@ -309,12 +331,6 @@
       animation-timeline: scroll(root block);
       animation-range: 0 92vh;
     }
-
-    .hero-parallax {
-      animation: blob-drift linear both;
-      animation-timeline: scroll(root block);
-      animation-range: 0 100vh;
-    }
   }
 }
 
@@ -328,15 +344,6 @@
     opacity: 0;
     scale: 0.94;
     translate: 0 -60px;
-  }
-}
-
-@keyframes blob-drift {
-  from {
-    translate: 0 -4%;
-  }
-  to {
-    translate: 0 18%;
   }
 }
 
@@ -375,7 +382,7 @@
 
 /* The mono label above a section heading. It is part of the heading block,
    not a pinned band: a sticky label needs an opaque backing, and an opaque
-   rectangle over a gradient canvas reads as a bug. */
+   rectangle over a tinted canvas reads as a bug. */
 .section-kicker {
   display: block;
 }
@@ -505,48 +512,9 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Row spotlight. `use-spotlight.ts` writes `--mx` / `--my` as percentages on
-   a rAF tick; this layer paints the pool. The row's own background is painted
-   first, the layer next, and the stretched link `::after` and the focus ring
-   after it, so the hit area and the keyboard ring stay on top.
+   Row lift. A row that lifts on hover, and does the same when anything inside
+   takes focus, so the keyboard gets the same affordance as the mouse.
    --------------------------------------------------------------------------- */
-.row-spotlight {
-  position: absolute;
-  inset: 0;
-  border-radius: var(--radius-md);
-  pointer-events: none;
-  opacity: 0;
-  background: radial-gradient(
-    16rem 16rem at var(--mx, 50%) var(--my, 50%),
-    color-mix(in oklab, var(--color-ember) 40%, transparent),
-    transparent 70%
-  );
-  transition: opacity 220ms var(--ease-out);
-}
-
-.dark .row-spotlight {
-  background: radial-gradient(
-    16rem 16rem at var(--mx, 50%) var(--my, 50%),
-    color-mix(in oklab, var(--color-ember) 50%, transparent),
-    transparent 70%
-  );
-}
-
-@media (hover: hover) {
-  .row-lift:hover > .row-spotlight,
-  .row-lift:focus-within > .row-spotlight {
-    opacity: 0.12;
-  }
-}
-
-@media (hover: none), (prefers-reduced-motion: reduce) {
-  .row-spotlight {
-    display: none;
-  }
-}
-
-/* A row that lifts on hover, and does the same when anything inside takes
-   focus, so the keyboard gets the same affordance as the mouse. */
 .row-lift {
   transition:
     background-color 240ms var(--ease-out),
@@ -695,49 +663,7 @@
 }
 
 /* ---------------------------------------------------------------------------
-   The hero's colour field: three big blobs, blurred hard enough to read as
-   light rather than as shapes. The parent clips them.
-   --------------------------------------------------------------------------- */ .hero-glow {
-  background:
-    radial-gradient(
-      40rem 32rem at 22% 18%,
-      color-mix(in oklab, var(--grad-1) 30%, transparent),
-      transparent 68%
-    ),
-    radial-gradient(
-      34rem 28rem at 74% 6%,
-      color-mix(in oklab, var(--grad-2) 24%, transparent),
-      transparent 66%
-    ),
-    radial-gradient(
-      30rem 26rem at 56% 96%,
-      color-mix(in oklab, var(--grad-3) 16%, transparent),
-      transparent 62%
-    );
-  filter: blur(46px);
-}
-
-.dark .hero-glow {
-  background:
-    radial-gradient(
-      40rem 32rem at 22% 18%,
-      color-mix(in oklab, var(--grad-1) 34%, transparent),
-      transparent 68%
-    ),
-    radial-gradient(
-      34rem 28rem at 74% 6%,
-      color-mix(in oklab, var(--grad-2) 26%, transparent),
-      transparent 66%
-    ),
-    radial-gradient(
-      30rem 26rem at 56% 96%,
-      color-mix(in oklab, var(--grad-3) 18%, transparent),
-      transparent 62%
-    );
-}
-
-/* ---------------------------------------------------------------------------
-   The home page. Three full-bleed bands, one pinned rail, and a gradient word.
+   The home page. Three full-bleed bands, one pinned rail, and one accent word.
    --------------------------------------------------------------------------- */
 
 /* The page's side inset, shared by the frame and the rail's full-bleed track
@@ -759,45 +685,10 @@
   }
 }
 
-/* One phrase of the headline in the gradient. Both stops clear 4.5:1 in both
-   palettes (dark 5.8 / 6.6, light 5.8 / 5.3), which a third tangerine stop
-   would not: darkened for the light paper it turns brown. */
-.gradient-word {
-  display: inline-block;
-  /* `background-clip: text` only paints where the background box reaches, and
-     the tight display leading (0.92) puts the box above the descender: without
-     room below the baseline the tail of a "y" is sliced flat. The padding
-     extends the paint box and the equal negative margin keeps the line box —
-     and so the heading's measured height — exactly as it was. */
-  padding-bottom: 0.16em;
-  margin-bottom: -0.16em;
-  background-image: linear-gradient(100deg, var(--grad-1), var(--grad-2));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-@media (forced-colors: active) {
-  .gradient-word {
-    background-image: none;
-    color: CanvasText;
-  }
-}
-
 /* --- The work rail ------------------------------------------------------- */
 
 .rail-card-cover {
-  aspect-ratio: 16 / 10;
-}
-
-/* A bottom scrim over the cover gradient, so the initial and the card edge
-   sit on something rather than on the brightest part of the gradient. */
-.cover-scrim {
-  background: linear-gradient(
-    to top,
-    oklch(0 0 0 / 0.42),
-    oklch(0 0 0 / 0) 62%
-  );
+  aspect-ratio: 21 / 9;
 }
 
 .rail {
@@ -868,9 +759,9 @@
     }
 
     /* In the rail the card is a wide landscape panel, so the cover gets a
-       viewport-relative height instead of the grid's 16:10 ratio. */
+       viewport-relative height instead of the grid's 21:9 ratio. */
     .rail-card-cover {
-      height: clamp(10rem, 30vh, 17rem);
+      height: clamp(7.5rem, 18vh, 10.5rem);
       aspect-ratio: auto;
     }
   }
@@ -888,8 +779,8 @@
 
 /* --- The stats band ------------------------------------------------------ */
 
-/* Azure and cyan, the cool end of the family, so the band reads as a separate
-   field rather than a continuation of the navy wash above. */
+/* One flat surface tint, separated from the page by hairlines. It reads as a
+   separate field without a second colour. */
 .stats-band {
   border-block: 1px solid var(--hairline);
   background-color: color-mix(
@@ -897,17 +788,6 @@
     var(--color-paper) 86%,
     var(--color-surface-2)
   );
-  background-image:
-    radial-gradient(
-      42rem 26rem at 8% 0%,
-      color-mix(in oklab, var(--grad-3) 24%, transparent),
-      transparent 70%
-    ),
-    radial-gradient(
-      38rem 24rem at 92% 100%,
-      color-mix(in oklab, var(--grad-4) 20%, transparent),
-      transparent 70%
-    );
 }
 
 /* ---------------------------------------------------------------------------
@@ -928,15 +808,10 @@
 }
 
 /* A phone scrolls the pills sideways instead of wrapping them onto four
-   lines. The scrollbar is hidden because the clipped last pill already says
-   "there is more"; the row keeps its full height either way. */
+   lines. The scrollbar is hidden; the row keeps its full height either way. */
 .feed-scroll {
   overflow-x: auto;
   scrollbar-width: none;
-  /* The last pill runs under the right edge as a hint that the row scrolls;
-     the fade makes that read as deliberate rather than as a clipped control.
-     Where the pills fit, the fade falls on empty space and is invisible. */
-  mask-image: linear-gradient(to right, black calc(100% - 2.5rem), transparent);
 }
 
 .feed-scroll::-webkit-scrollbar {
@@ -962,12 +837,7 @@
     z-index: 50;
     height: 2px;
     transform-origin: 0 50%;
-    background-image: linear-gradient(
-      90deg,
-      var(--grad-1),
-      var(--grad-2) 55%,
-      var(--grad-3)
-    );
+    background-color: var(--acc);
     animation: read-progress linear both;
     animation-timeline: scroll(root);
   }
@@ -1023,9 +893,8 @@
 }
 
 /* ---------------------------------------------------------------------------
-   The about page's timeline. A single gradient rail, and one dot per entry
-   painted in the same gradient family. Pure presentation: the entries are the
-   sources the settings already say are enabled.
+   The about page's timeline. One hairline rail and one accent dot per entry.
+   Pure presentation: the entries are the sources the settings say are enabled.
    --------------------------------------------------------------------------- */
 .timeline {
   position: relative;
@@ -1037,13 +906,7 @@
   inset-block: 0.4rem;
   left: 5px;
   width: 1px;
-  background: linear-gradient(
-    to bottom,
-    var(--grad-1),
-    var(--grad-2) 55%,
-    var(--grad-3) 82%,
-    var(--grad-4)
-  );
+  background: var(--hairline);
 }
 
 .timeline-item {
@@ -1058,6 +921,7 @@
   height: 11px;
   width: 11px;
   border-radius: var(--radius-pill);
+  background: var(--acc);
   box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-paper) 70%, transparent);
 }
 

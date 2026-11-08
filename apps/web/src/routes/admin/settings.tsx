@@ -53,6 +53,7 @@ function AdminSettings() {
         githubUsername: data.githubUsername ?? "",
         name: data.name,
         ogImage: data.ogImage ?? "",
+        palette: data.palette,
         socials: data.socials,
         tagline: data.tagline,
       }
@@ -66,6 +67,7 @@ function AdminSettings() {
       githubUsername: blankToNull(values.githubUsername),
       name: values.name,
       ogImage: blankToNull(values.ogImage),
+      palette: values.palette,
       socials: values.socials,
       tagline: values.tagline,
     });

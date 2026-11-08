@@ -1,19 +1,19 @@
-/** The four gradient fills for the largest languages, then one neutral. */
-const GRADIENTS = [
-  "var(--grad-1)",
-  "var(--grad-2)",
-  "var(--grad-3)",
-  "var(--grad-4)",
+/** The four accent shades for the largest languages, then one neutral. */
+const FILLS = [
+  "var(--acc)",
+  "var(--acc-text)",
+  "var(--acc-fill)",
+  "var(--acc-deep)",
 ] as const;
 const REST = "color-mix(in oklab, var(--color-muted) 42%, transparent)";
 
 function fillAt(index: number): string {
-  return GRADIENTS[index] ?? REST;
+  return FILLS[index] ?? REST;
 }
 
 /**
  * The language breakdown as one stacked bar plus a legend. The four largest
- * languages get the site's gradient family and everything else shares a
+ * languages get the palette's accent shades and everything else shares a
  * neutral, so the bar reads as a ranking rather than a swatch chart.
  */
 export function LanguageBar({

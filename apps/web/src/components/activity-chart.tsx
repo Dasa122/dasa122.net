@@ -54,7 +54,7 @@ export function ActivityChart({ activity }: { activity: ActivityDay[] }) {
               </span>
               <div className="flex h-24 w-full items-end">
                 <div
-                  className="w-full rounded-t-[3px] rounded-b-[1px] bg-[var(--grad-1)]"
+                  className="w-full rounded-t-[3px] rounded-b-[1px] bg-[var(--acc)]"
                   style={{ height: `${height}px` }}
                   title={`${day.date}: ${day.count}`}
                 />
