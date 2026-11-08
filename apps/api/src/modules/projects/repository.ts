@@ -8,6 +8,7 @@ import { and, asc, desc, eq, ne } from "drizzle-orm";
 import type { z } from "zod";
 import { db } from "../../database";
 import { projectsTable } from "../../database/schema";
+import { renderMarkdown } from "../../util/markdown";
 import { slugify, uniqueSlug } from "../../util/slug";
 
 export type Project = z.infer<typeof projectSchema>;
@@ -18,10 +19,15 @@ type ProjectRow = typeof projectsTable.$inferSelect;
 type ProjectInsert = typeof projectsTable.$inferInsert;
 type ProjectPatch = Partial<Omit<ProjectInsert, "createdAt" | "id">>;
 
-/** Maps a stored row to the contract shape: dates become ISO strings. */
-function toProject(row: ProjectRow): Project {
+/**
+ * Maps a stored row to the contract shape: dates become ISO strings. Only the
+ * detail read renders `bodyHtml`; lists carry the raw markdown as `body` and
+ * leave the rendered HTML null, the way posts do.
+ */
+function toProject(row: ProjectRow, bodyHtml: string | null = null): Project {
   return {
     body: row.body,
+    bodyHtml,
     coverImage: row.coverImage,
     createdAt: row.createdAt.toISOString(),
     featured: row.featured,
@@ -62,10 +68,11 @@ export async function listPublishedProjects(): Promise<Project[]> {
     .from(projectsTable)
     .where(eq(projectsTable.status, "published"))
     .orderBy(asc(projectsTable.sortOrder), desc(projectsTable.createdAt));
-  return rows.map(toProject);
+  return rows.map((row) => toProject(row));
 }
 
-/** One published project by slug; drafts are invisible. */
+/** One published project by slug; drafts are invisible. `bodyHtml` is rendered
+ * here and only here, from the stored markdown. */
 export async function getPublishedProjectBySlug(
   slug: string,
 ): Promise<Project | null> {
@@ -76,7 +83,13 @@ export async function getPublishedProjectBySlug(
       and(eq(projectsTable.status, "published"), eq(projectsTable.slug, slug)),
     )
     .limit(1);
-  return row === undefined ? null : toProject(row);
+  if (row === undefined) {
+    return null;
+  }
+  const body = row.body;
+  const bodyHtml =
+    body === null || body.trim() === "" ? null : await renderMarkdown(body);
+  return toProject(row, bodyHtml);
 }
 
 /** The admin list: drafts included, optionally filtered by status. */
@@ -92,7 +105,7 @@ export async function adminListProjects(filter: {
         : eq(projectsTable.status, filter.status),
     )
     .orderBy(asc(projectsTable.sortOrder), desc(projectsTable.createdAt));
-  return rows.map(toProject);
+  return rows.map((row) => toProject(row));
 }
 
 /**
