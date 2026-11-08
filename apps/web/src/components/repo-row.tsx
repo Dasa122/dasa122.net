@@ -42,7 +42,9 @@ export function parseRepoUrl(
 /**
  * One repository: the name links to the in-site page, a trailing `↗` keeps
  * direct access to GitHub, the description sits beneath it, and a mono meta run
- * carries the language and the counts.
+ * carries the language and the counts. It is a row inside the repositories
+ * card, not a card of its own, so the list keeps the work index's card rhythm
+ * without nesting glass inside glass.
  */
 export function RepoRow({ repo }: { repo: Repo }) {
   const target = parseRepoUrl(repo.url);
@@ -55,11 +57,11 @@ export function RepoRow({ repo }: { repo: Repo }) {
     .join(" · ");
 
   return (
-    <article className="py-5">
-      <h3 className="font-mono text-base leading-snug">
+    <article className="group -mx-2 flex flex-col gap-1.5 rounded-[var(--radius-md)] px-2 py-4 transition-colors duration-300 ease-[var(--ease-out)] hover:bg-[var(--color-surface-2)]">
+      <h3 className="flex flex-wrap items-baseline gap-x-2 text-lg leading-snug tracking-[-0.02em] [overflow-wrap:anywhere]">
         {target ? (
           <Link
-            className="transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] hover:text-ember-text"
+            className="transition-colors duration-300 ease-[var(--ease-out)] hover:text-ember-text"
             params={{ owner: target.owner, repo: target.name }}
             to="/github/$owner/$repo"
           >
@@ -70,7 +72,7 @@ export function RepoRow({ repo }: { repo: Repo }) {
         )}{" "}
         <a
           aria-label={`${repo.name} on GitHub`}
-          className="text-muted transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] hover:text-ember-text"
+          className="font-mono text-[0.75rem] text-muted transition-colors duration-300 ease-[var(--ease-out)] hover:text-ember-text"
           href={repo.url}
           rel="noopener noreferrer"
           target="_blank"
@@ -79,9 +81,11 @@ export function RepoRow({ repo }: { repo: Repo }) {
         </a>
       </h3>
       {repo.description && (
-        <p className="mt-2 max-w-[60ch] text-muted">{repo.description}</p>
+        <p className="max-w-[64ch] text-[0.9375rem] leading-relaxed text-muted">
+          {repo.description}
+        </p>
       )}
-      <div className="mt-2">
+      <div className="mt-0.5">
         <Meta>{meta}</Meta>
       </div>
     </article>

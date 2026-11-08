@@ -1,7 +1,8 @@
-import { buttonClassName, Meta, Prose, Rule, Section } from "@dasa122/ui";
+import { buttonClassName, Meta, Prose } from "@dasa122/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useState } from "react";
+import { coverForSlug } from "../components/project-card";
 import { canonicalOrigin } from "../utils/canonical";
 import { isNotFound } from "../utils/errors";
 import { formatDate, formatNumber } from "../utils/format";
@@ -10,9 +11,9 @@ import { type api, orpc } from "../utils/orpc";
 type RepoDetail = Awaited<ReturnType<typeof api.github.repo>>;
 
 const frame = "mx-auto w-full max-w-[80rem] px-6 md:px-10";
-const quietLink =
-  "font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-muted transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] hover:text-ember-text hover:underline hover:underline-offset-4";
 const muted = "font-mono text-[0.75rem] text-muted";
+const barLink =
+  "font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-muted transition-colors duration-300 ease-[var(--ease-out)] hover:text-ember-text";
 
 export const Route = createFileRoute("/github/$owner/$repo")({
   component: RepoPage,
@@ -80,7 +81,11 @@ function CopyButton({ text }: { text: string }) {
   }
 
   return (
-    <button className={quietLink} onClick={() => void copy()} type="button">
+    <button
+      className="shrink-0 cursor-pointer font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-muted transition-colors duration-300 ease-[var(--ease-out)] hover:text-ember-text"
+      onClick={() => void copy()}
+      type="button"
+    >
       {copied ? "Copied" : "Copy"}
     </button>
   );
@@ -97,102 +102,136 @@ function RepoPage() {
   // Known even before the API answers, so the error state can still offer a way
   // out to GitHub.
   const fallbackUrl = `https://github.com/${owner}/${name}`;
+  const clone = `git clone https://github.com/${owner}/${name}.git`;
 
   return (
     <main className="flex-1">
-      <div className={frame}>
-        <div className="pt-8">
-          <Link className={quietLink} to="/github">
-            ← GitHub
-          </Link>
-        </div>
-
-        <article className="pt-[clamp(2rem,5vw,4rem)] pb-[clamp(4rem,10vw,9rem)]">
-          {isPending && <p className={muted}>Loading repository…</p>}
-
-          {isError && (
-            <div className={muted}>
-              <p>Could not load this repository.</p>
-              <p className="mt-3">
-                <a
-                  className="underline underline-offset-4"
-                  href={fallbackUrl}
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  Open on GitHub ↗
-                </a>
-              </p>
+      {/* The sub-header parks under the site header (both use `--header-h`) and
+          carries the same glass and masked blur, so the two read as one piece
+          of chrome rather than two stacked bars. */}
+      <div className="repo-bar">
+        <div className={`${frame} py-3`}>
+          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+            <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
+              <Link className={barLink} to="/github">
+                ← GitHub
+              </Link>
+              <span aria-hidden="true" className="text-rule">
+                /
+              </span>
+              <span className="min-w-0 font-mono text-[0.75rem] text-ink [overflow-wrap:anywhere]">
+                {owner}/{name}
+              </span>
             </div>
-          )}
 
-          {repo && (
-            <>
-              <header>
-                <h1 className="max-w-[24ch] font-display text-[clamp(2.75rem,7vw,5rem)] leading-[1.02] tracking-[-0.02em]">
-                  {repo.name}
-                </h1>
-                <p className={`${muted} mt-2`}>
-                  {repo.owner}/{repo.name}
+            <a
+              className={`${buttonClassName("quiet")} px-4 py-2`}
+              href={repo?.htmlUrl ?? fallbackUrl}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              <span className="hidden sm:inline">Open on </span>GitHub ↗
+            </a>
+          </div>
+
+          <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-5">
+            <div className="flex min-w-0 items-center gap-3 rounded-[var(--radius-sm)] bg-[var(--glass-bg)] px-2.5 py-1 shadow-[inset_0_1px_0_var(--glass-hi),inset_0_0_0_1px_var(--glass-edge)] sm:max-w-[32rem] sm:flex-1">
+              <code className="min-w-0 flex-1 truncate font-mono text-[0.6875rem] text-muted">
+                {clone}
+              </code>
+              <CopyButton text={clone} />
+            </div>
+          </div>
+        </div>
+        <div aria-hidden="true" className="repo-bar-blur" />
+      </div>
+
+      {isPending && (
+        <div className={frame}>
+          <p className={`${muted} py-16`}>Loading repository…</p>
+        </div>
+      )}
+
+      {isError && (
+        <div className={frame}>
+          <div className="glass-card mt-10 p-6 sm:p-8">
+            <p className={muted}>Could not load this repository.</p>
+            <p className="mt-4">
+              <a
+                className={buttonClassName("quiet")}
+                href={fallbackUrl}
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                Open on GitHub ↗
+              </a>
+            </p>
+          </div>
+        </div>
+      )}
+
+      {repo && (
+        <>
+          {/* The band is the repository's own colour, hashed from its full
+              name, so it never changes under the same repository. The title
+              sits in the scrim, where white clears the bar over all five. */}
+          <section
+            className="relative isolate overflow-hidden"
+            style={{ backgroundImage: coverForSlug(`${owner}/${name}`) }}
+          >
+            <div aria-hidden="true" className="cover-scrim absolute inset-0" />
+            <div
+              className={`${frame} relative flex min-h-[clamp(13rem,30vh,20rem)] flex-col justify-end pt-20 pb-[clamp(1.75rem,4vw,3rem)]`}
+            >
+              <p className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-white/85">
+                {repo.owner} · Repository
+              </p>
+              <h1 className="mt-3 max-w-[24ch] font-display text-[clamp(2.25rem,6vw,4.5rem)] font-semibold leading-[0.94] tracking-[-0.05em] text-white [overflow-wrap:anywhere]">
+                {repo.name}
+              </h1>
+            </div>
+          </section>
+
+          <div className={frame}>
+            <article className="max-w-[62rem] pt-[clamp(2rem,5vw,3.5rem)] pb-[clamp(4rem,10vw,9rem)]">
+              {repo.description && (
+                <p className="max-w-[62ch] text-lg leading-relaxed text-ink md:text-xl">
+                  {repo.description}
                 </p>
+              )}
 
-                {repo.description && (
-                  <p className="mt-5 max-w-[60ch] text-lg leading-relaxed text-ink">
-                    {repo.description}
-                  </p>
-                )}
+              <div className="mt-4">
+                <Meta>
+                  {[
+                    repo.language,
+                    `★ ${formatNumber(repo.stars)}`,
+                    `⑂ ${formatNumber(repo.forks)}`,
+                    `updated ${formatDate(repo.updatedAt)}`,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </Meta>
+              </div>
 
-                <div className="mt-4">
-                  <Meta>
-                    {[
-                      repo.language,
-                      `★ ${formatNumber(repo.stars)}`,
-                      `⑂ ${formatNumber(repo.forks)}`,
-                      `updated ${formatDate(repo.updatedAt)}`,
-                    ]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </Meta>
-                </div>
-
-                <div className="mt-8 flex flex-wrap items-center gap-4">
-                  <a
-                    className={buttonClassName("solid")}
-                    href={repo.htmlUrl}
-                    rel="noopener noreferrer"
-                    target="_blank"
-                  >
-                    Open on GitHub ↗
-                  </a>
-
-                  <div className="flex items-center gap-3 rounded-[var(--radius-sm)] border border-[var(--hairline)] px-3 py-2">
-                    <code className="font-mono text-[0.75rem] text-muted">
-                      {`git clone https://github.com/${repo.owner}/${repo.name}.git`}
-                    </code>
-                    <CopyButton
-                      text={`git clone https://github.com/${repo.owner}/${repo.name}.git`}
-                    />
-                  </div>
-                </div>
-              </header>
-
-              <div className="mt-12">
+              <div className="mt-10">
                 {repo.readmeHtml ? (
-                  // Sanitised at the API boundary. The image constraints are
-                  // scoped here because a wide badge row must not scroll the
-                  // page horizontally.
-                  <div className="[&_img]:h-auto [&_img]:max-w-full">
+                  // Sanitised at the API boundary. The image constraints and
+                  // the table scroll live in `Prose`, so a wide badge row
+                  // cannot scroll the page sideways.
+                  <div className="glass-card p-6 md:p-10">
                     <Prose html={repo.readmeHtml} />
                   </div>
                 ) : (
-                  <p className={muted}>This repository has no README.</p>
+                  <div className="glass-card p-6 md:p-8">
+                    <p className={muted}>This repository has no README.</p>
+                  </div>
                 )}
 
                 {repo.readmeTruncated && (
                   <p className={`${muted} mt-6`}>
                     README truncated —{" "}
                     <a
-                      className="underline underline-offset-4"
+                      className="underline decoration-ember underline-offset-4 hover:decoration-ember-text"
                       href={repo.htmlUrl}
                       rel="noopener noreferrer"
                       target="_blank"
@@ -203,10 +242,10 @@ function RepoPage() {
                   </p>
                 )}
               </div>
-            </>
-          )}
-        </article>
-      </div>
+            </article>
+          </div>
+        </>
+      )}
     </main>
   );
 }
@@ -215,17 +254,17 @@ function RepoNotFound() {
   return (
     <main className="flex-1">
       <div className={frame}>
-        <Section>
-          <p className="font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-muted">
+        <div className="py-[clamp(4rem,12vw,8rem)]">
+          <p className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-muted">
             404
           </p>
-          <div className="mt-4">
-            <Rule />
-          </div>
-          <p className="mt-4 font-mono text-[0.75rem] text-muted">
+          <p className="mt-5 max-w-[24ch] font-display text-[clamp(2rem,5vw,3.5rem)] font-semibold leading-[0.98] tracking-[-0.04em]">
             That repository does not exist.
           </p>
-        </Section>
+          <Link className={`${buttonClassName("quiet")} mt-8`} to="/github">
+            All repositories
+          </Link>
+        </div>
       </div>
     </main>
   );

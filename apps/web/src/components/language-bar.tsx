@@ -1,8 +1,20 @@
-const SWATCHES = ["bg-ink", "bg-muted", "bg-ember-fill", "bg-rule"];
+/** The four gradient fills for the largest languages, then one neutral. */
+const GRADIENTS = [
+  "var(--grad-1)",
+  "var(--grad-2)",
+  "var(--grad-3)",
+  "var(--grad-4)",
+] as const;
+const REST = "color-mix(in oklab, var(--color-muted) 42%, transparent)";
+
+function fillAt(index: number): string {
+  return GRADIENTS[index] ?? REST;
+}
 
 /**
- * The language breakdown as one stacked bar plus a legend. Each row shows the
- * language and its share in tabular figures.
+ * The language breakdown as one stacked bar plus a legend. The four largest
+ * languages get the site's gradient family and everything else shares a
+ * neutral, so the bar reads as a ranking rather than a swatch chart.
  */
 export function LanguageBar({
   languages,
@@ -20,36 +32,41 @@ export function LanguageBar({
 
   return (
     <div>
-      <div aria-hidden="true" className="flex h-2 w-full overflow-hidden">
+      <div
+        aria-hidden="true"
+        className="flex h-2.5 w-full gap-[2px] overflow-hidden rounded-[var(--radius-pill)]"
+      >
         {entries.map(([language, count], index) => (
           <div
-            className={SWATCHES[index % SWATCHES.length] ?? "bg-rule"}
+            className="h-full first:rounded-l-[var(--radius-pill)] last:rounded-r-[var(--radius-pill)]"
             key={language}
-            style={{ width: `${(count / total) * 100}%` }}
+            style={{
+              background: fillAt(index),
+              width: `${(count / total) * 100}%`,
+            }}
             title={language}
           />
         ))}
       </div>
 
-      <dl className="mt-4 space-y-2">
+      <ul className="mt-5 flex flex-wrap gap-2">
         {entries.map(([language, count], index) => (
-          <div
-            className="flex items-baseline justify-between gap-4"
+          <li
+            className="inline-flex items-center gap-2 rounded-[var(--radius-pill)] border border-[var(--glass-edge)] bg-[var(--glass-bg)] px-3 py-1.5 text-[0.8125rem] leading-none text-ink shadow-[inset_0_1px_0_var(--glass-hi)]"
             key={language}
           >
-            <dt className="flex items-center gap-2">
-              <span
-                aria-hidden="true"
-                className={`h-2 w-2 shrink-0 ${SWATCHES[index % SWATCHES.length] ?? "bg-rule"}`}
-              />
-              <span>{language}</span>
-            </dt>
-            <dd className="font-mono text-[0.75rem] tabular-nums text-muted">
+            <span
+              aria-hidden="true"
+              className="h-2 w-2 shrink-0 rounded-full"
+              style={{ background: fillAt(index) }}
+            />
+            <span className="max-w-[12ch] truncate">{language}</span>
+            <span className="font-mono text-[0.6875rem] tabular-nums text-muted">
               {Math.round((count / total) * 100)}%
-            </dd>
-          </div>
+            </span>
+          </li>
         ))}
-      </dl>
+      </ul>
     </div>
   );
 }

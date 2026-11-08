@@ -91,7 +91,7 @@ export function SiteHeader({ name }: { name: string }) {
   }
 
   return (
-    <header className="glass sticky top-0 z-40">
+    <header className="site-header glass sticky top-0 z-40">
       <div className="mx-auto grid w-full max-w-[80rem] grid-cols-12 items-baseline gap-x-6 px-6 py-5 md:px-10">
         <Link
           className="col-span-9 font-display text-2xl leading-none tracking-[-0.01em] md:col-span-3"
