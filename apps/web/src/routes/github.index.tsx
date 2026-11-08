@@ -175,6 +175,10 @@ export function GitHubPage() {
             Pull requests from GitHub — read from a cached snapshot rather than
             a live GitHub call.
           </p>
+          <p className="mt-3 max-w-[52ch] text-muted">
+            The evidence of the work: every change proposed, reviewed and merged
+            in the open.
+          </p>
           {data && (
             <div className="mt-4">
               <Meta>
