@@ -37,6 +37,8 @@ const postsOptions = orpc.posts.list.queryOptions({
   input: { limit: POSTS_LIMIT },
 });
 const projectsOptions = orpc.projects.list.queryOptions({ input: {} });
+// The root loader has already cached this, so reading it here is free.
+const siteOptions = orpc.site.get.queryOptions({ input: {} });
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -74,6 +76,7 @@ function Eyebrow({ children }: { children: string }) {
 function HomePage() {
   const posts = useQuery(postsOptions);
   const projects = useQuery(projectsOptions);
+  const site = useQuery(siteOptions);
 
   const items = posts.data?.items ?? [];
   const featured = (projects.data?.items ?? []).filter(
@@ -86,6 +89,14 @@ function HomePage() {
 
   const postsCount = useCountUp(posts.data?.total);
   const projectsCount = useCountUp(projects.data?.total);
+  // A missing or errored site query leaves this undefined: the band then
+  // falls back to two columns rather than claiming zero sources.
+  const sourceTotal = site.data?.enabledSources.length;
+  const sourcesCount = useCountUp(sourceTotal);
+  const statsColumns =
+    sourceTotal !== undefined && sourceTotal > 0
+      ? "sm:grid-cols-3"
+      : "sm:grid-cols-2";
 
   return (
     <main className="flex-1">
@@ -98,7 +109,7 @@ function HomePage() {
           className="hero-glow hero-parallax pointer-events-none absolute inset-0 -z-10"
         />
         <div className={`${frame} relative py-20`}>
-          <Eyebrow>Notes · Projects · Commits</Eyebrow>
+          <Eyebrow>Notes · Projects · GitHub</Eyebrow>
 
           <h1 className="mt-6 max-w-[16ch] font-display text-[clamp(2.75rem,8.5vw,7.5rem)] font-semibold leading-[0.92] tracking-[-0.045em]">
             Software, built <span className="gradient-word">carefully</span>.
@@ -173,8 +184,8 @@ function HomePage() {
             </div>
 
             <div className="rail-track">
-              {featured.map((project) => (
-                <ProjectCard key={project.id} project={project} />
+              {featured.map((project, index) => (
+                <ProjectCard index={index} key={project.id} project={project} />
               ))}
             </div>
           </div>
@@ -238,11 +249,11 @@ function HomePage() {
       </section>
 
       {/* ---------------------------------------------------------------- */}
-      {/* The band: the two totals the page actually knows.                  */}
+      {/* The band: the three totals the page actually knows.                */}
       {/* ---------------------------------------------------------------- */}
       <section aria-label="At a glance" className="stats-band">
         <div
-          className={`${frame} grid gap-10 py-[clamp(3rem,7vw,5rem)] sm:grid-cols-2`}
+          className={`${frame} grid gap-10 py-[clamp(3rem,7vw,5rem)] ${statsColumns}`}
         >
           <div>
             <p className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-muted">
@@ -271,6 +282,22 @@ function HomePage() {
               projects
             </p>
           </div>
+
+          {sourceTotal !== undefined && sourceTotal > 0 && (
+            <div>
+              <p className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-muted">
+                Connected
+              </p>
+              <p className="mt-3 font-display text-[clamp(3.5rem,9vw,6.5rem)] font-semibold leading-[0.92] tracking-[-0.05em] tabular-nums">
+                <span ref={sourcesCount.ref}>
+                  {sourcesCount.value ?? sourceTotal}
+                </span>
+              </p>
+              <p className="mt-2 font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-muted">
+                sources
+              </p>
+            </div>
+          )}
         </div>
       </section>
 

@@ -58,15 +58,21 @@
      gradient in both palettes. */
   --color-on-accent: oklch(0.99 0.002 285);
 
-  /* Covers are decorative fields, never text backgrounds, so they keep the
-     vivid lightness in both palettes (white display initials sit on them,
-     under a scrim). This is why they are not `--grad-1..4`, which light mode
-     darkens for text contrast. */
-  --cover-1: oklch(0.66 0.21 285);
-  --cover-2: oklch(0.7 0.24 340);
-  --cover-3: oklch(0.8 0.17 62);
-  --cover-4: oklch(0.82 0.15 165);
-  --cover-5: oklch(0.58 0.2 255);
+  /* Covers rotate through five hue families, one per card (index % 5), and
+     each pairs its hue with a darker sibling for the diagonal. White display
+     initials sit on them in both palettes, so every base stop clears 4.5:1
+     against white (worst: blue 4.85, mint 4.87; the deeper stops are 9.5+).
+     They are not `--grad-1..4`, which light mode darkens for text contrast. */
+  --cover-1: oklch(0.55 0.22 285);
+  --cover-1-deep: oklch(0.38 0.2 285);
+  --cover-2: oklch(0.56 0.25 340);
+  --cover-2-deep: oklch(0.39 0.22 340);
+  --cover-3: oklch(0.54 0.18 62);
+  --cover-3-deep: oklch(0.37 0.16 55);
+  --cover-4: oklch(0.515 0.16 165);
+  --cover-4-deep: oklch(0.34 0.14 160);
+  --cover-5: oklch(0.525 0.19 235);
+  --cover-5-deep: oklch(0.35 0.17 242);
 
   --radius-sm: 10px;
   --radius-md: 16px;
@@ -821,6 +827,8 @@
 
 /* --- The stats band ------------------------------------------------------ */
 
+/* Tangerine and mint, not the hero's iris and violet, so the band reads as a
+   separate field rather than a continuation of the purple wash above. */
 .stats-band {
   border-block: 1px solid var(--hairline);
   background-color: color-mix(
@@ -830,13 +838,13 @@
   );
   background-image:
     radial-gradient(
-      42rem 26rem at 10% 0%,
-      color-mix(in oklab, var(--grad-1) 22%, transparent),
+      42rem 26rem at 8% 0%,
+      color-mix(in oklab, var(--grad-3) 24%, transparent),
       transparent 70%
     ),
     radial-gradient(
-      38rem 24rem at 90% 100%,
-      color-mix(in oklab, var(--grad-2) 16%, transparent),
+      38rem 24rem at 92% 100%,
+      color-mix(in oklab, var(--grad-4) 20%, transparent),
       transparent 70%
     );
 }
