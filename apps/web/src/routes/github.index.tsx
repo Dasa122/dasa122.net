@@ -1,7 +1,6 @@
-import { DataPanel, Meta, Rule } from "@dasa122/ui";
+import { DataPanel, Meta } from "@dasa122/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Fragment } from "react";
 import { ActivityChart } from "../components/activity-chart";
 import { LanguageBar } from "../components/language-bar";
 import { RepoRow } from "../components/repo-row";
@@ -14,7 +13,6 @@ const DESCRIPTION =
   "Repositories, languages, commits, and activity from GitHub — read from a cached snapshot.";
 
 const frame = "mx-auto w-full max-w-[80rem] px-6 md:px-10";
-const heading = "text-3xl leading-tight tracking-[-0.01em] md:text-4xl";
 const muted = "font-mono text-[0.75rem] text-muted";
 
 // One options object shared by the loader's prefetch and the component's
@@ -55,9 +53,14 @@ export function GitHubPage() {
   return (
     <main className="flex-1">
       <div className={frame}>
-        <header className="py-[clamp(3.5rem,9vw,7rem)]">
-          <h1 className={heading}>GitHub</h1>
-          <p className="mt-4 max-w-[52ch] text-lg leading-relaxed text-ink">
+        <header className="pt-[clamp(2.5rem,6vw,4.5rem)]">
+          <p className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-muted">
+            Open source
+          </p>
+          <h1 className="mt-3 font-display text-[clamp(2.75rem,7vw,5rem)] font-semibold leading-[0.94] tracking-[-0.045em]">
+            GitHub
+          </h1>
+          <p className="mt-5 max-w-[52ch] text-lg leading-relaxed text-muted">
             Repositories, languages, commits, and activity — read from a cached
             snapshot rather than a live GitHub call.
           </p>
@@ -72,7 +75,7 @@ export function GitHubPage() {
           )}
         </header>
 
-        <div className="pb-[clamp(4rem,10vw,9rem)]">
+        <div className="pt-10 pb-[clamp(4rem,10vw,9rem)]">
           {overview.isPending && <p className={muted}>Loading GitHub data…</p>}
           {overview.isError && (
             <p className="font-mono text-[0.75rem] text-ember-text">
@@ -99,39 +102,42 @@ export function GitHubPage() {
                 </DataPanel>
               </div>
             ) : (
-              <div className="space-y-4">
-                <DataPanel title="REPOSITORIES">
-                  {data.repos.length === 0 ? (
-                    <p className={muted}>No repositories yet.</p>
-                  ) : (
-                    data.repos.map((repo, index) => (
-                      <Fragment key={repo.name}>
-                        {index > 0 && <Rule />}
-                        <RepoRow repo={repo} />
-                      </Fragment>
-                    ))
-                  )}
-                </DataPanel>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <DataPanel title="LANGUAGES">
-                    <LanguageBar languages={data.languages} />
-                  </DataPanel>
-
-                  {/* `totalCommits` is a rolling window — the sum of
-                      `payload.size` over at most the 100 most recent fetched
-                      events — so the panel is labelled "recent". */}
-                  <DataPanel title="COMMITS (RECENT)">
-                    <p className="font-display text-5xl tabular-nums">
-                      {formatNumber(data.totalCommits)}
-                    </p>
-                    <p className="mt-3 font-mono text-[0.6875rem] text-muted">
-                      Sum of the last 100 fetched events, not a lifetime total.
-                    </p>
+              <div className="grid gap-4 lg:grid-cols-3">
+                <div className="lg:col-span-3">
+                  <DataPanel title="REPOSITORIES">
+                    {data.repos.length === 0 ? (
+                      <p className={muted}>No repositories yet.</p>
+                    ) : (
+                      <div className="divide-y divide-[var(--color-rule)]">
+                        {data.repos.map((repo) => (
+                          <RepoRow key={repo.name} repo={repo} />
+                        ))}
+                      </div>
+                    )}
                   </DataPanel>
                 </div>
 
-                <ActivityChart activity={data.activity} />
+                <div className="lg:col-span-2">
+                  <DataPanel title="LANGUAGES">
+                    <LanguageBar languages={data.languages} />
+                  </DataPanel>
+                </div>
+
+                {/* `totalCommits` is a rolling window — the sum of
+                    `payload.size` over at most the 100 most recent fetched
+                    events — so the panel is labelled "recent". */}
+                <DataPanel title="COMMITS (RECENT)">
+                  <p className="font-display text-[clamp(3rem,7vw,4.5rem)] font-semibold leading-none tracking-[-0.05em] tabular-nums">
+                    {formatNumber(data.totalCommits)}
+                  </p>
+                  <p className="mt-3 font-mono text-[0.6875rem] leading-relaxed text-muted">
+                    Sum of the last 100 fetched events, not a lifetime total.
+                  </p>
+                </DataPanel>
+
+                <div className="lg:col-span-3">
+                  <ActivityChart activity={data.activity} />
+                </div>
               </div>
             ))}
         </div>

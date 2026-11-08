@@ -1,8 +1,8 @@
 import type { postDetailSchema } from "@dasa122/contract";
-import { Rule, Section } from "@dasa122/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { AdminHeading } from "../../components/admin-heading";
 import {
   PostEditor,
   type PostEditorInitial,
@@ -11,9 +11,6 @@ import {
 import { orpc } from "../../utils/orpc";
 
 const frame = "mx-auto w-full max-w-[80rem] px-6 md:px-10";
-const heading = "text-3xl leading-tight tracking-[-0.01em] md:text-4xl";
-const eyebrow =
-  "font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-muted";
 const errorText = "font-mono text-[0.75rem] text-ember-text";
 
 /** The id lookup reads the same list the index renders, one page deep. */
@@ -47,16 +44,12 @@ function AdminMessage({
   return (
     <main className="flex-1">
       <div className={frame}>
-        <Section>
-          <header>
-            <p className={eyebrow}>Admin</p>
-            <h1 className={`mt-2 ${heading}`}>{title}</h1>
-          </header>
-          <div className="mt-8">
-            <Rule />
+        <div className="pb-[clamp(4rem,10vw,9rem)] pt-6">
+          <AdminHeading title={title} />
+          <div className="glass-card mt-8 max-w-[62rem] p-6 sm:p-8">
+            <p className="text-lg leading-relaxed text-ink">{children}</p>
           </div>
-          <p className="py-6 text-lg leading-relaxed text-ink">{children}</p>
-        </Section>
+        </div>
       </div>
     </main>
   );
@@ -127,23 +120,22 @@ function EditPostPage() {
   return (
     <main className="flex-1">
       <div className={frame}>
-        <Section>
-          <header>
-            <p className={eyebrow}>Admin</p>
-            <h1 className={`mt-2 ${heading}`}>Edit post</h1>
-          </header>
+        <div className="pb-[clamp(4rem,10vw,9rem)] pt-6">
+          <AdminHeading title="Edit post" />
 
-          {(update.isError || publish.isError || unpublish.isError) && (
-            <p className={`mt-8 ${errorText}`}>Could not save the post.</p>
-          )}
+          <div className="glass-card mt-8 max-w-[62rem] p-6 sm:p-8">
+            {(update.isError || publish.isError || unpublish.isError) && (
+              <p className={`mb-6 ${errorText}`}>Could not save the post.</p>
+            )}
 
-          <PostEditor
-            initial={initial}
-            isPending={isPending}
-            onPublish={publishNow}
-            onSave={save}
-          />
-        </Section>
+            <PostEditor
+              initial={initial}
+              isPending={isPending}
+              onPublish={publishNow}
+              onSave={save}
+            />
+          </div>
+        </div>
       </div>
     </main>
   );

@@ -1,4 +1,5 @@
 import type { siteSettingsSchema } from "@dasa122/contract";
+import { buttonClassName } from "@dasa122/ui";
 import type { QueryClient } from "@tanstack/react-query";
 import {
   createRootRouteWithContext,
@@ -95,27 +96,37 @@ function RootComponent() {
 function NotFound() {
   return (
     <main className="flex flex-1 items-center">
-      <div className={`${frame} py-24`}>
-        <p
+      <section
+        className="relative isolate w-full overflow-hidden"
+        style={{
+          backgroundImage:
+            "linear-gradient(128deg, var(--cover-1-deep), var(--cover-2-deep) 55%, var(--cover-5-deep))",
+        }}
+      >
+        <div
           aria-hidden="true"
-          className="font-display text-[clamp(6rem,22vw,14rem)] leading-[0.8] text-rule"
+          className="pointer-events-none absolute inset-0 bg-black/20 bg-[radial-gradient(60rem_40rem_at_20%_0%,oklch(1_0_0/0.16),transparent_65%)]"
+        />
+        <div
+          className={`${frame} relative flex min-h-[clamp(24rem,58vh,34rem)] flex-col justify-center py-[clamp(4rem,10vw,7rem)]`}
         >
-          404
-        </p>
-        <h1 className="mt-4 font-display text-[clamp(1.75rem,4vw,2.5rem)] leading-[1.05] tracking-[-0.02em]">
-          That page does not exist.
-        </h1>
-        <p className="mt-3 max-w-[42ch] text-muted">
-          The link may be old, or the page may have moved. The notes and the
-          work are still where you left them.
-        </p>
-        <Link
-          className="mt-8 inline-block font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-ember-text transition-colors duration-200 ease-[cubic-bezier(0.2,0,0,1)] hover:underline hover:underline-offset-4"
-          to="/"
-        >
-          Back to the front page
-        </Link>
-      </div>
+          <p className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-white/80">
+            404
+          </p>
+          <h1 className="mt-5 max-w-[18ch] font-display text-[clamp(2.5rem,8vw,5.5rem)] font-semibold leading-[0.94] tracking-[-0.05em] text-white">
+            This page does not exist.
+          </h1>
+          <p className="mt-5 max-w-[46ch] text-lg leading-relaxed text-white/85">
+            The link may be old, or the page may have moved. The notes and the
+            work are still where you left them.
+          </p>
+          <div className="mt-9">
+            <Link className={buttonClassName("quiet")} to="/">
+              Back to the front page
+            </Link>
+          </div>
+        </div>
+      </section>
     </main>
   );
 }

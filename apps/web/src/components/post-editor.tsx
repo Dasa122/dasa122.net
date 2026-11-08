@@ -27,8 +27,7 @@ export type PostEditorInitial = {
 
 const label =
   "block font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-muted";
-const field =
-  "mt-2 w-full border-b border-rule bg-transparent py-2 text-base leading-relaxed text-ink outline-none transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] focus:border-ink";
+const field = "admin-field";
 const errorText = "font-mono text-[0.75rem] text-ember-text";
 
 /** A trimmed value, or null when the field is blank. */
@@ -102,7 +101,7 @@ export function PostEditor({
 
   return (
     <form
-      className="mt-10"
+      className="max-w-[56rem]"
       onSubmit={(event) => {
         event.preventDefault();
         dispatch(onSave);

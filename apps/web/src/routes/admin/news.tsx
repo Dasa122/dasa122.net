@@ -1,4 +1,4 @@
-import { buttonClassName, Rule, Section } from "@dasa122/ui";
+import { buttonClassName } from "@dasa122/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createFileRoute,
@@ -6,14 +6,11 @@ import {
   Outlet,
   useMatchRoute,
 } from "@tanstack/react-router";
-import { Fragment } from "react";
+import { AdminHeading } from "../../components/admin-heading";
 import { AdminPostRow } from "../../components/admin-post-row";
 import { orpc } from "../../utils/orpc";
 
 const frame = "mx-auto w-full max-w-[80rem] px-6 md:px-10";
-const heading = "text-3xl leading-tight tracking-[-0.01em] md:text-4xl";
-const eyebrow =
-  "font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-muted";
 const muted = "font-mono text-[0.75rem] text-muted";
 const errorText = "font-mono text-[0.75rem] text-ember-text";
 
@@ -60,45 +57,47 @@ function AdminNewsList() {
   return (
     <main className="flex-1">
       <div className={frame}>
-        <Section>
-          <header className="flex flex-wrap items-baseline justify-between gap-4">
-            <div>
-              <p className={eyebrow}>Admin</p>
-              <h1 className={`mt-2 ${heading}`}>News</h1>
-            </div>
-            <Link className={buttonClassName("solid")} to="/admin/news/new">
-              New post
-            </Link>
-          </header>
+        <div className="pb-[clamp(4rem,10vw,9rem)] pt-6">
+          <AdminHeading
+            action={
+              <Link className={buttonClassName("solid")} to="/admin/news/new">
+                New post
+              </Link>
+            }
+            title="News"
+          />
 
-          <div className="mt-10">
-            <Rule />
-            {list.isPending && (
-              <p className="py-5 font-mono text-[0.75rem] text-muted">
-                Loading posts…
-              </p>
-            )}
-            {list.isError && (
-              <p className={`py-5 ${errorText}`}>Could not load posts.</p>
-            )}
-            {list.isSuccess && posts.length === 0 && (
-              <p className={`py-5 ${muted}`}>No posts yet.</p>
-            )}
-            {posts.map((post, index) => (
-              <Fragment key={post.id}>
-                {index > 0 && <Rule />}
-                <AdminPostRow
-                  onDelete={() => remove.mutate({ id: post.id })}
-                  post={post}
-                />
-              </Fragment>
-            ))}
-          </div>
+          {list.isPending && (
+            <p className="mt-10 font-mono text-[0.75rem] text-muted">
+              Loading posts…
+            </p>
+          )}
+          {list.isError && (
+            <p className={`mt-10 ${errorText}`}>Could not load posts.</p>
+          )}
+          {list.isSuccess && posts.length === 0 && (
+            <p className={`mt-10 ${muted}`}>No posts yet.</p>
+          )}
+
+          {posts.length > 0 && (
+            <div className="glass-card mt-8 px-4 sm:px-6">
+              <ul className="divide-y divide-[var(--color-rule)]">
+                {posts.map((post) => (
+                  <li key={post.id}>
+                    <AdminPostRow
+                      onDelete={() => remove.mutate({ id: post.id })}
+                      post={post}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {remove.isError && (
-            <p className={`py-5 ${errorText}`}>Could not delete the post.</p>
+            <p className={`mt-6 ${errorText}`}>Could not delete the post.</p>
           )}
-        </Section>
+        </div>
       </div>
     </main>
   );

@@ -8,7 +8,7 @@ const labels: Record<Source, string> = {
 
 /**
  * The source tokens are the only place colour carries meaning here: mint for
- * GitHub, blue for LinkedIn, iris for a note. Each is measured at 4.5:1 or
+ * GitHub, azure for LinkedIn, blue for a note. Each is measured at 4.5:1 or
  * better against its own 12% tint in both palettes.
  */
 const tones: Record<Source, string> = {

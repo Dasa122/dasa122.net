@@ -5,10 +5,15 @@ export type ActivityDay = {
   date: string;
 };
 
-const MAX_BAR_HEIGHT = 80;
+const MAX_BAR_HEIGHT = 96;
 // Capping the scale denominator keeps a single outlier day from flattening
 // every other bar; the rendered height is capped too.
 const PEAK_CAP = 20;
+
+/** `2026-11-05` → `11-05`, so the axis fits under a narrow bar. */
+function shortDate(date: string): string {
+  return date.slice(5);
+}
 
 /**
  * A row of bars, one per day, built from plain elements — no chart library.
@@ -34,28 +39,28 @@ export function ActivityChart({ activity }: { activity: ActivityDay[] }) {
         {activity.map((day) => {
           const height =
             day.count === 0
-              ? 1
+              ? 2
               : Math.min(
                   MAX_BAR_HEIGHT,
-                  Math.max(3, Math.round((day.count / scale) * MAX_BAR_HEIGHT)),
+                  Math.max(4, Math.round((day.count / scale) * MAX_BAR_HEIGHT)),
                 );
           return (
             <div
-              className="flex min-w-[1.125rem] flex-col items-center gap-1"
+              className="flex min-w-[1.125rem] flex-col items-center gap-1.5"
               key={day.date}
             >
-              <div className="flex h-20 w-full items-end">
+              <span className="font-mono text-[0.5625rem] tabular-nums text-muted">
+                {day.count}
+              </span>
+              <div className="flex h-24 w-full items-end">
                 <div
-                  className="w-full bg-ink"
+                  className="w-full rounded-t-[3px] rounded-b-[1px] bg-[var(--grad-1)]"
                   style={{ height: `${height}px` }}
                   title={`${day.date}: ${day.count}`}
                 />
               </div>
-              <span className="font-mono text-[0.5625rem] tabular-nums text-muted">
-                {day.count}
-              </span>
               <span className="font-mono text-[0.5rem] text-muted [writing-mode:vertical-rl]">
-                {day.date}
+                {shortDate(day.date)}
               </span>
             </div>
           );

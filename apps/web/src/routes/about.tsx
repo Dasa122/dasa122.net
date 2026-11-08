@@ -1,5 +1,5 @@
 import type { siteSettingsSchema } from "@dasa122/contract";
-import { Rule } from "@dasa122/ui";
+import { buttonClassName } from "@dasa122/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { SectionHeading } from "../components/section-heading";
@@ -21,6 +21,21 @@ const sourceLabels = {
   linkedin: "Publishing on LinkedIn",
   own: "Writing notes here",
 } as const;
+
+/** The short, factual kicker under each timeline entry. */
+const sourceKickers = {
+  github: "GITHUB",
+  linkedin: "LINKEDIN",
+  own: "NOTES",
+} as const;
+
+/** One gradient per timeline dot, cycled through the same family as the site. */
+const DOT_FILLS = [
+  "var(--grad-1)",
+  "var(--grad-2)",
+  "var(--grad-3)",
+  "var(--grad-4)",
+] as const;
 
 // One options object shared by the loader's prefetch and the component's
 // `useQuery` so the server render is never fetched twice.
@@ -47,8 +62,8 @@ export const Route = createFileRoute("/about")({
 
 /**
  * The about page reads everything from `site.get`, so the owner can edit the
- * copy from the admin panel. The 12-column layout leaves the left column
- * empty on purpose: the asymmetry is the design.
+ * copy from the admin panel. The page is one statement in the site's own
+ * voice, then the biography, then the three facts the settings actually hold.
  */
 export function AboutPage() {
   const site = useQuery(siteOptions);
@@ -67,6 +82,23 @@ export function AboutPage() {
         {site.data && <AboutContent settings={site.data} />}
       </div>
     </main>
+  );
+}
+
+/**
+ * The statement's last word carries the gradient. Splitting on the last space
+ * keeps the copy exactly as it is stored — nothing is rewritten to fit the
+ * treatment, and a one-word statement simply renders plain.
+ */
+function Statement({ text }: { text: string }) {
+  const words = text.trim().split(/\s+/);
+  const last = words.pop() ?? "";
+
+  return (
+    <>
+      {words.length > 0 && `${words.join(" ")} `}
+      <span className="gradient-word">{last}</span>
+    </>
   );
 }
 
@@ -114,101 +146,102 @@ function AboutContent({ settings }: { settings: Settings }) {
     ...toLink(settings.socials.rss, "RSS"),
   ];
 
+  const statement = settings.tagline.trim() || `About ${settings.name}`;
+
   return (
-    <>
-      <header className="grid grid-cols-12 gap-x-6 gap-y-6">
-        <div className="hidden md:col-span-4 md:block" />
-        <div className="col-span-12 md:col-span-7 md:col-start-6">
-          <SectionHeading as="h1" label={settings.name} title="About" />
-          {settings.tagline && (
-            <p className="mt-6 max-w-[42ch] text-lg leading-relaxed text-ink md:text-xl">
-              {settings.tagline}
-            </p>
-          )}
-        </div>
+    <div className="grid grid-cols-12 gap-x-6 gap-y-12">
+      <header className="col-span-12 pt-[clamp(0.5rem,2vw,1.5rem)] md:col-span-5">
+        <p className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-muted">
+          {settings.name} · About
+        </p>
+        <h1 className="mt-5 font-display text-[clamp(2.5rem,5.5vw,4.5rem)] font-semibold leading-[0.94] tracking-[-0.045em]">
+          <Statement text={statement} />
+        </h1>
       </header>
 
-      {settings.description && (
-        <>
-          <div className="mt-12">
-            <Rule />
-          </div>
-          <div className="mt-10 grid grid-cols-12 gap-x-6 gap-y-4">
-            <p className="col-span-12 font-mono text-[0.625rem] uppercase tracking-[0.18em] text-muted md:col-span-3">
+      <div className="col-span-12 space-y-12 md:col-span-7 md:col-start-6">
+        {settings.description && (
+          <section>
+            <p className="font-mono text-[0.625rem] uppercase tracking-[0.18em] text-muted">
               Biography
             </p>
-            <p className="col-span-12 max-w-[68ch] text-[1.0625rem] leading-[1.75] text-ink md:col-span-7">
+            <p className="mt-4 max-w-[68ch] text-[1.0625rem] leading-[1.75] text-ink">
               {settings.description}
             </p>
-          </div>
-        </>
-      )}
+          </section>
+        )}
 
-      <div className="mt-12">
-        <Rule />
+        <section>
+          <SectionHeading label="01" title="Currently" />
+          {settings.enabledSources.length > 0 ? (
+            <ol className="timeline mt-6 space-y-7">
+              {settings.enabledSources.map((source, index) => (
+                <li className="timeline-item" key={source}>
+                  <span
+                    aria-hidden="true"
+                    className="timeline-dot"
+                    style={{
+                      background: DOT_FILLS[index % DOT_FILLS.length],
+                    }}
+                  />
+                  <p className="text-lg leading-snug text-ink">
+                    {sourceLabels[source]}
+                  </p>
+                  <p className="mt-1 font-mono text-[0.625rem] uppercase tracking-[0.16em] text-muted">
+                    {sourceKickers[source]}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="mt-4 font-mono text-[0.75rem] text-muted">
+              Nothing published right now.
+            </p>
+          )}
+        </section>
+
+        <section>
+          <SectionHeading label="02" title="Elsewhere" />
+          {elsewhere.length > 0 ? (
+            <ul className="mt-5 flex flex-wrap gap-2">
+              {elsewhere.map((link) => (
+                <li key={link.href}>
+                  <a
+                    className={buttonClassName("quiet")}
+                    href={link.href}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    {link.label} ↗
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-4 font-mono text-[0.75rem] text-muted">
+              No links set yet.
+            </p>
+          )}
+        </section>
+
+        <section>
+          <SectionHeading label="03" title="Contact" />
+          {settings.socials.email ? (
+            <p className="mt-5">
+              <a
+                className={buttonClassName("quiet")}
+                href={`mailto:${settings.socials.email}`}
+              >
+                {settings.socials.email}
+              </a>
+            </p>
+          ) : (
+            <p className="mt-4 font-mono text-[0.75rem] text-muted">
+              No contact address set yet.
+            </p>
+          )}
+        </section>
       </div>
-
-      <div className="mt-10 grid grid-cols-12 gap-x-6 gap-y-10">
-        <div className="hidden md:col-span-4 md:block" />
-        <div className="col-span-12 space-y-10 md:col-span-7 md:col-start-6">
-          <section>
-            <SectionHeading label="01" title="Currently" />
-            {settings.enabledSources.length > 0 ? (
-              <ul className="mt-4 space-y-2 text-ink">
-                {settings.enabledSources.map((source) => (
-                  <li key={source}>{sourceLabels[source]}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-4 font-mono text-[0.75rem] text-muted">
-                Nothing published right now.
-              </p>
-            )}
-          </section>
-
-          <section>
-            <SectionHeading label="02" title="Elsewhere" />
-            {elsewhere.length > 0 ? (
-              <ul className="mt-4 flex flex-wrap gap-x-6 gap-y-2">
-                {elsewhere.map((link) => (
-                  <li key={link.href}>
-                    <a
-                      className="underline decoration-rule underline-offset-4 transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] hover:decoration-ember-text"
-                      href={link.href}
-                      rel="noopener noreferrer"
-                      target="_blank"
-                    >
-                      {link.label} ↗
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-4 font-mono text-[0.75rem] text-muted">
-                No links set yet.
-              </p>
-            )}
-          </section>
-
-          <section>
-            <SectionHeading label="03" title="Contact" />
-            {settings.socials.email ? (
-              <p className="mt-4">
-                <a
-                  className="underline decoration-rule underline-offset-4 transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] hover:decoration-ember-text"
-                  href={`mailto:${settings.socials.email}`}
-                >
-                  {settings.socials.email}
-                </a>
-              </p>
-            ) : (
-              <p className="mt-4 font-mono text-[0.75rem] text-muted">
-                No contact address set yet.
-              </p>
-            )}
-          </section>
-        </div>
-      </div>
-    </>
+    </div>
   );
 }

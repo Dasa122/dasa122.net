@@ -1,12 +1,12 @@
-import { Button, DataPanel, Meta, Rule, Section } from "@dasa122/ui";
+import { Button, DataPanel, Meta } from "@dasa122/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Fragment, useState } from "react";
+import { useState } from "react";
+import { AdminHeading } from "../../components/admin-heading";
 import { formatNumber, formatRelativeTime } from "../../utils/format";
 import { orpc } from "../../utils/orpc";
 
 const frame = "mx-auto w-full max-w-[80rem] px-6 md:px-10";
-const heading = "text-3xl leading-tight tracking-[-0.01em] md:text-4xl";
 const eyebrow =
   "font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-muted";
 const muted = "font-mono text-[0.75rem] text-muted";
@@ -79,66 +79,63 @@ function AdminGithub() {
   return (
     <main className="flex-1">
       <div className={frame}>
-        <Section>
-          <header>
-            <p className={eyebrow}>Admin</p>
-            <h1 className={`mt-2 ${heading}`}>GitHub</h1>
-          </header>
+        <div className="pb-[clamp(4rem,10vw,9rem)] pt-6">
+          <AdminHeading title="GitHub" />
 
-          <div className="mt-10">
-            {status.isPending && (
-              <p className="py-5 font-mono text-[0.75rem] text-muted">
-                Loading the GitHub snapshot…
-              </p>
-            )}
-            {status.isError && (
-              <p className={`py-5 ${errorText}`}>
-                Could not load the GitHub snapshot.
-              </p>
-            )}
-          </div>
+          {status.isPending && (
+            <p className="mt-10 font-mono text-[0.75rem] text-muted">
+              Loading the GitHub snapshot…
+            </p>
+          )}
+          {status.isError && (
+            <p className={`mt-10 ${errorText}`}>
+              Could not load the GitHub snapshot.
+            </p>
+          )}
 
           {data && (
             <>
-              <DataPanel title="CONNECTION">
-                <div className="space-y-5 py-2">
-                  <div>
-                    <p className={eyebrow}>Token</p>
-                    <p className="mt-1 text-base leading-relaxed text-ink">
-                      {data.tokenPresent
-                        ? "Configured."
-                        : "No token configured — using the unauthenticated public API (60 requests/hour)."}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className={eyebrow}>Username</p>
-                    <p className="mt-1 font-mono text-[0.8125rem] text-ink">
-                      {data.username ?? "Not configured"}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className={eyebrow}>Last run</p>
-                    <p className="mt-1 font-mono text-[0.8125rem] text-ink">
-                      {data.lastRunAt
-                        ? formatRelativeTime(data.lastRunAt)
-                        : "Never run"}
-                    </p>
-                    {data.lastStatus === "error" && data.lastError && (
-                      <p className={`mt-1 ${muted}`}>{data.lastError}</p>
-                    )}
-                  </div>
-                </div>
-              </DataPanel>
-
               <div className="mt-8">
+                <DataPanel title="CONNECTION">
+                  <div className="space-y-5">
+                    <div>
+                      <p className={eyebrow}>Token</p>
+                      <p className="mt-1 text-base leading-relaxed text-ink">
+                        {data.tokenPresent
+                          ? "Configured."
+                          : "No token configured — using the unauthenticated public API (60 requests/hour)."}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className={eyebrow}>Username</p>
+                      <p className="mt-1 font-mono text-[0.8125rem] text-ink">
+                        {data.username ?? "Not configured"}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className={eyebrow}>Last run</p>
+                      <p className="mt-1 font-mono text-[0.8125rem] text-ink">
+                        {data.lastRunAt
+                          ? formatRelativeTime(data.lastRunAt)
+                          : "Never run"}
+                      </p>
+                      {data.lastStatus === "error" && data.lastError && (
+                        <p className={`mt-1 ${muted}`}>{data.lastError}</p>
+                      )}
+                    </div>
+                  </div>
+                </DataPanel>
+              </div>
+
+              <div className="mt-6">
                 <Button
                   disabled={sync.isPending}
                   onClick={() => sync.mutate({})}
                   variant="solid"
                 >
-                  SYNC NOW
+                  Sync now
                 </Button>
                 <div className="mt-4">
                   {sync.isPending && <p className={muted}>Syncing…</p>}
@@ -155,31 +152,33 @@ function AdminGithub() {
                 </div>
               </div>
 
-              <div className="mt-12">
+              <div className="mt-8">
                 <DataPanel title="REPOSITORIES">
                   {repos.length === 0 ? (
-                    <p className={`py-3 ${muted}`}>
+                    <p className={`py-2 ${muted}`}>
                       No repositories in the cached snapshot yet. Run a sync to
                       populate it.
                     </p>
                   ) : (
-                    repos.map((repo, index) => {
-                      const isFeatured = featuredNames.has(repo.name);
-                      return (
-                        <Fragment key={repo.name}>
-                          {index > 0 && <Rule />}
-                          <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 py-4">
+                    <div className="divide-y divide-[var(--color-rule)]">
+                      {repos.map((repo) => {
+                        const isFeatured = featuredNames.has(repo.name);
+                        return (
+                          <div
+                            className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 py-4"
+                            key={repo.name}
+                          >
                             <div className="min-w-0">
-                              <h2 className="font-mono text-base leading-snug">
+                              <h3 className="text-lg leading-snug tracking-[-0.02em] [overflow-wrap:anywhere]">
                                 <a
-                                  className="transition-colors duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] hover:text-ember-text"
+                                  className="transition-colors duration-300 ease-[var(--ease-out)] hover:text-ember-text"
                                   href={repo.url}
                                   rel="noopener noreferrer"
                                   target="_blank"
                                 >
                                   {repo.name}
                                 </a>
-                              </h2>
+                              </h3>
                               <div className="mt-1">
                                 <Meta>
                                   {[
@@ -196,12 +195,12 @@ function AdminGithub() {
                               onClick={() => toggleFeatured(repo.name)}
                               variant="quiet"
                             >
-                              {isFeatured ? "FEATURED" : "FEATURE"}
+                              {isFeatured ? "Featured" : "Feature"}
                             </Button>
                           </div>
-                        </Fragment>
-                      );
-                    })
+                        );
+                      })}
+                    </div>
                   )}
                 </DataPanel>
                 {featured.isError && (
@@ -212,7 +211,7 @@ function AdminGithub() {
               </div>
             </>
           )}
-        </Section>
+        </div>
       </div>
     </main>
   );

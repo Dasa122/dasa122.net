@@ -3,7 +3,7 @@
 @source "../../../../packages/ui/src";
 
 /* ---------------------------------------------------------------------------
-   The design system: one sans for everything, an iris-to-magenta gradient
+   The design system: one sans for everything, a navy-to-cyan gradient
    family for the colour, and glass for every surface that floats.
 
    The legacy token names (`paper`, `ink`, `rule`, `ember`, `surface-2/3`,
@@ -20,59 +20,62 @@
   --font-mono:
     "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
 
-  /* Light palette. `.dark` (below) is the shipped default. */
-  --color-paper: oklch(0.985 0.002 285);
-  --color-surface-2: oklch(0.965 0.004 285);
-  --color-surface-3: oklch(0.94 0.006 285);
-  --color-ink: oklch(0.12 0.02 285);
-  --color-muted: oklch(0.44 0.02 285);
-  --color-rule: oklch(0.12 0.02 285 / 0.12);
-  --color-ember: oklch(0.52 0.21 290);
-  --color-ember-text: oklch(0.48 0.2 292);
-  --color-ember-fill: oklch(0.5 0.22 292);
+  /* Light palette. `.dark` (below) is the shipped default. The neutrals carry
+     a faint blue cast (hue 255) rather than the old violet one. */
+  --color-paper: oklch(0.985 0.002 255);
+  --color-surface-2: oklch(0.965 0.004 255);
+  --color-surface-3: oklch(0.94 0.006 255);
+  --color-ink: oklch(0.12 0.02 255);
+  --color-muted: oklch(0.44 0.02 255);
+  --color-rule: oklch(0.12 0.02 255 / 0.12);
+  --color-ember: oklch(0.52 0.17 255);
+  --color-ember-text: oklch(0.48 0.16 252);
+  --color-ember-fill: oklch(0.5 0.16 255);
 
-  /* Gradient family. Light values are the dark ones at 0.45–0.56 lightness,
-     which clears 4.5:1 against the near-white paper. */
-  --grad-1: oklch(0.52 0.21 285);
-  --grad-2: oklch(0.55 0.23 340);
-  --grad-3: oklch(0.56 0.17 62);
-  --grad-4: oklch(0.5 0.13 165);
+  /* Gradient family: navy → blue → azure → cyan. Light values are darkened
+     so both stops of the display gradient clear 4.5:1 on the near-white
+     paper (measured 9.2:1 and 7.1:1). */
+  --grad-1: oklch(0.4 0.14 262);
+  --grad-2: oklch(0.46 0.16 250);
+  --grad-3: oklch(0.5 0.14 232);
+  --grad-4: oklch(0.52 0.11 205);
 
   /* The button gradient is deliberately darker than --grad-1/2: near-white on
      the decorative stops measures 3.3:1, and white-on-fill text must clear
-     4.5:1. Same hues, 0.52/0.55 lightness, measured 5.6:1. */
+     4.5:1. Same hues, 0.42/0.52 lightness, measured 5.5:1. */
   --grad-accent: linear-gradient(
     135deg,
-    oklch(0.52 0.22 285),
-    oklch(0.55 0.23 340)
+    oklch(0.42 0.15 262),
+    oklch(0.52 0.16 255)
   );
 
   /* Feed provenance only. Note follows the (possibly custom) ember text
-     colour, so an accent override carries through; the two imported sources
-     get their own hue. Each clears 4.5:1 on its own 12% tint. */
+     colour, so an accent override carries through; GitHub keeps its semantic
+     green and LinkedIn takes the azure end of the same blue family. Each
+     clears 4.5:1 on its own 12% tint. */
   --color-source-note: var(--color-ember-text);
   --color-source-github: oklch(0.46 0.12 165);
-  --color-source-linkedin: oklch(0.44 0.14 255);
+  --color-source-linkedin: oklch(0.44 0.13 232);
 
   /* Text on the accent fill. Never remapped: the fill is a fixed dark
      gradient in both palettes. */
-  --color-on-accent: oklch(0.99 0.002 285);
+  --color-on-accent: oklch(0.99 0.002 255);
 
-  /* Covers rotate through five hue families, one per card (index % 5), and
-     each pairs its hue with a darker sibling for the diagonal. White display
-     initials sit on them in both palettes, so every base stop clears 4.5:1
-     against white (worst: blue 4.85, mint 4.87; the deeper stops are 9.5+).
-     They are not `--grad-1..4`, which light mode darkens for text contrast. */
-  --cover-1: oklch(0.55 0.22 285);
-  --cover-1-deep: oklch(0.38 0.2 285);
-  --cover-2: oklch(0.56 0.25 340);
-  --cover-2-deep: oklch(0.39 0.22 340);
-  --cover-3: oklch(0.54 0.18 62);
-  --cover-3-deep: oklch(0.37 0.16 55);
-  --cover-4: oklch(0.515 0.16 165);
-  --cover-4-deep: oklch(0.34 0.14 160);
-  --cover-5: oklch(0.525 0.19 235);
-  --cover-5-deep: oklch(0.35 0.17 242);
+  /* Covers rotate through five blue/teal hue families, one per card
+     (index % 5), and each pairs its hue with a darker sibling for the
+     diagonal. White display initials sit on them in both palettes, so every
+     base stop clears 4.5:1 against white (0.52–0.54 lightness). They are not
+     `--grad-1..4`, which light mode darkens for text contrast. */
+  --cover-1: oklch(0.52 0.16 265);
+  --cover-1-deep: oklch(0.36 0.14 265);
+  --cover-2: oklch(0.53 0.15 248);
+  --cover-2-deep: oklch(0.36 0.14 248);
+  --cover-3: oklch(0.54 0.13 232);
+  --cover-3-deep: oklch(0.37 0.12 232);
+  --cover-4: oklch(0.53 0.12 214);
+  --cover-4-deep: oklch(0.36 0.11 214);
+  --cover-5: oklch(0.54 0.11 195);
+  --cover-5-deep: oklch(0.37 0.1 195);
 
   --radius-sm: 10px;
   --radius-md: 16px;
@@ -83,16 +86,16 @@
   --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
 
   --shadow-lift:
-    0 1px 1px oklch(0.2 0.02 285 / 0.06),
-    0 18px 44px -22px oklch(0.2 0.06 285 / 0.32);
-  --shadow-accent: 0 12px 34px -14px oklch(0.5 0.22 292 / 0.55);
-  --shadow-accent-hover: 0 18px 46px -14px oklch(0.58 0.24 330 / 0.6);
+    0 1px 1px oklch(0.2 0.02 255 / 0.06),
+    0 18px 44px -22px oklch(0.2 0.06 255 / 0.32);
+  --shadow-accent: 0 12px 34px -14px oklch(0.5 0.16 255 / 0.55);
+  --shadow-accent-hover: 0 18px 46px -14px oklch(0.58 0.16 250 / 0.6);
 
   /* Glass chrome: a translucent surface, an inset top highlight and a border
      that is light on light and barely-there on dark. */
   --glass-bg: oklch(1 0 0 / 0.55);
   --glass-bg-hover: oklch(1 0 0 / 0.78);
-  --glass-edge: oklch(0.12 0.02 285 / 0.1);
+  --glass-edge: oklch(0.12 0.02 255 / 0.1);
   --glass-hi: oklch(1 0 0 / 0.7);
 }
 
@@ -108,27 +111,29 @@
    chosen value. */
 .dark {
   color-scheme: dark;
-  --surface: oklch(0.145 0.015 285);
-  --text: oklch(0.97 0.005 285);
+  --surface: oklch(0.145 0.015 255);
+  --text: oklch(0.97 0.005 255);
   --hairline: oklch(1 0 0 / 0.1);
 
-  --color-paper: oklch(0.145 0.015 285);
-  --color-surface-2: oklch(0.185 0.018 285);
-  --color-surface-3: oklch(0.225 0.02 285);
-  --color-ink: oklch(0.97 0.005 285);
-  --color-muted: oklch(0.72 0.02 285);
+  --color-paper: oklch(0.145 0.015 255);
+  --color-surface-2: oklch(0.185 0.018 255);
+  --color-surface-3: oklch(0.225 0.02 255);
+  --color-ink: oklch(0.97 0.005 255);
+  --color-muted: oklch(0.72 0.02 255);
   --color-rule: oklch(1 0 0 / 0.1);
-  --color-ember: oklch(0.7 0.21 290);
-  --color-ember-text: oklch(0.78 0.18 295);
-  --color-ember-fill: oklch(0.62 0.23 292);
+  --color-ember: oklch(0.58 0.17 255);
+  --color-ember-text: oklch(0.72 0.14 250);
+  --color-ember-fill: oklch(0.5 0.16 255);
 
-  --grad-1: oklch(0.66 0.21 285);
-  --grad-2: oklch(0.7 0.24 340);
-  --grad-3: oklch(0.8 0.17 62);
-  --grad-4: oklch(0.82 0.15 165);
+  /* Same navy → blue → azure → cyan ramp, lifted for a near-black canvas:
+     the two display stops measure 5.0:1 and 6.4:1. */
+  --grad-1: oklch(0.6 0.16 262);
+  --grad-2: oklch(0.66 0.16 250);
+  --grad-3: oklch(0.72 0.14 232);
+  --grad-4: oklch(0.78 0.12 202);
 
   --color-source-github: oklch(0.8 0.15 165);
-  --color-source-linkedin: oklch(0.78 0.13 250);
+  --color-source-linkedin: oklch(0.78 0.12 225);
 
   --glass-bg: oklch(1 0 0 / 0.06);
   --glass-bg-hover: oklch(1 0 0 / 0.1);
@@ -137,8 +142,8 @@
 
   --shadow-lift:
     0 1px 1px oklch(0 0 0 / 0.4), 0 20px 50px -24px oklch(0 0 0 / 0.9);
-  --shadow-accent: 0 14px 40px -16px oklch(0.5 0.24 292 / 0.65);
-  --shadow-accent-hover: 0 20px 54px -16px oklch(0.6 0.26 330 / 0.7);
+  --shadow-accent: 0 14px 40px -16px oklch(0.5 0.18 255 / 0.65);
+  --shadow-accent-hover: 0 20px 54px -16px oklch(0.6 0.18 250 / 0.7);
 }
 
 @layer base {
@@ -355,6 +360,19 @@
   -webkit-backdrop-filter: blur(16px) saturate(160%);
 }
 
+/* The card surface used by every data and admin panel: translucent, rounded
+   to `--radius-lg`, and separated by a 1px inset highlight instead of a drawn
+   border. Callers add their own padding. */
+.glass-card {
+  background: color-mix(in oklab, var(--color-paper) 52%, transparent);
+  box-shadow:
+    inset 0 1px 0 var(--glass-hi),
+    inset 0 0 0 1px var(--glass-edge);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border-radius: var(--radius-lg);
+}
+
 /* The mono label above a section heading. It is part of the heading block,
    not a pinned band: a sticky label needs an opaque backing, and an opaque
    rectangle over a gradient canvas reads as a bug. */
@@ -435,7 +453,8 @@
    of chrome rather than as a second header.
    --------------------------------------------------------------------------- */
 .header-blur,
-.feed-bar-blur {
+.feed-bar-blur,
+.repo-bar-blur {
   position: absolute;
   inset-inline: 0;
   top: 100%;
@@ -449,14 +468,16 @@
   mask-image: linear-gradient(to bottom, black, transparent);
 }
 
-.feed-bar-blur {
+.feed-bar-blur,
+.repo-bar-blur {
   height: 30px;
 }
 
 @media (prefers-reduced-motion: reduce) {
   /* Decorative only: nothing is lost by not rendering it at all. */
   .header-blur,
-  .feed-bar-blur {
+  .feed-bar-blur,
+  .repo-bar-blur {
     display: none;
   }
 }
@@ -742,6 +763,14 @@
    palettes (dark 5.8 / 6.6, light 5.8 / 5.3), which a third tangerine stop
    would not: darkened for the light paper it turns brown. */
 .gradient-word {
+  display: inline-block;
+  /* `background-clip: text` only paints where the background box reaches, and
+     the tight display leading (0.92) puts the box above the descender: without
+     room below the baseline the tail of a "y" is sliced flat. The padding
+     extends the paint box and the equal negative margin keeps the line box —
+     and so the heading's measured height — exactly as it was. */
+  padding-bottom: 0.16em;
+  margin-bottom: -0.16em;
   background-image: linear-gradient(100deg, var(--grad-1), var(--grad-2));
   -webkit-background-clip: text;
   background-clip: text;
@@ -859,8 +888,8 @@
 
 /* --- The stats band ------------------------------------------------------ */
 
-/* Tangerine and mint, not the hero's iris and violet, so the band reads as a
-   separate field rather than a continuation of the purple wash above. */
+/* Azure and cyan, the cool end of the family, so the band reads as a separate
+   field rather than a continuation of the navy wash above. */
 .stats-band {
   border-block: 1px solid var(--hairline);
   background-color: color-mix(
@@ -975,5 +1004,155 @@
   .project-rail {
     position: sticky;
     top: calc(var(--header-h) + 1.5rem);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   The repository page's sub-header. It is the second sticky surface on that
+   page and parks directly under the site header, using the same measured
+   height token and the same glass, so the two read as one chrome.
+   --------------------------------------------------------------------------- */
+.repo-bar {
+  position: sticky;
+  top: var(--header-h);
+  z-index: 30;
+  background: color-mix(in oklab, var(--color-paper) 78%, transparent);
+  backdrop-filter: blur(18px) saturate(170%);
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+  box-shadow: inset 0 1px 0 var(--glass-hi);
+}
+
+/* ---------------------------------------------------------------------------
+   The about page's timeline. A single gradient rail, and one dot per entry
+   painted in the same gradient family. Pure presentation: the entries are the
+   sources the settings already say are enabled.
+   --------------------------------------------------------------------------- */
+.timeline {
+  position: relative;
+}
+
+.timeline::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.4rem;
+  left: 5px;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    var(--grad-1),
+    var(--grad-2) 55%,
+    var(--grad-3) 82%,
+    var(--grad-4)
+  );
+}
+
+.timeline-item {
+  position: relative;
+  padding-left: 1.9rem;
+}
+
+.timeline-dot {
+  position: absolute;
+  left: 0;
+  top: 0.4rem;
+  height: 11px;
+  width: 11px;
+  border-radius: var(--radius-pill);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-paper) 70%, transparent);
+}
+
+/* ---------------------------------------------------------------------------
+   The admin surface. Fields are translucent wells with an inset highlight and
+   a blue focus ring; cards reuse `.glass-card`. The forms and lists on every
+   admin route share these two classes so the page and the editors cannot drift
+   apart.
+   --------------------------------------------------------------------------- */
+.admin-field {
+  margin-top: 0.5rem;
+  width: 100%;
+  appearance: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: color-mix(in oklab, var(--color-paper) 62%, transparent);
+  padding: 0.6rem 0.75rem;
+  color: var(--color-ink);
+  box-shadow:
+    inset 0 1px 0 var(--glass-hi),
+    inset 0 0 0 1px var(--glass-edge);
+  font-size: 1rem;
+  line-height: 1.6;
+  outline: none;
+  transition: box-shadow 240ms var(--ease-out);
+}
+
+.admin-field:focus {
+  box-shadow:
+    inset 0 1px 0 var(--glass-hi),
+    inset 0 0 0 1px color-mix(in oklab, var(--color-ember) 55%, transparent),
+    0 0 0 3px color-mix(in oklab, var(--color-ember) 22%, transparent);
+}
+
+.admin-field::placeholder {
+  color: var(--color-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-field {
+    transition: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Cross-route view transitions. The header is captured under a stable name
+   and never animates, so navigation looks like the page moving underneath a
+   fixed chrome; the page itself cross-fades with a small lift. Everything here
+   is inside `no-preference`, and the browser ignores it where the API is
+   missing: navigation is a normal navigation either way.
+   --------------------------------------------------------------------------- */
+.site-header {
+  view-transition-name: site-header;
+}
+
+::view-transition-group(site-header) {
+  animation: none;
+}
+
+::view-transition-old(site-header),
+::view-transition-new(site-header) {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root) {
+    animation: page-out 220ms var(--ease-out) both;
+  }
+
+  ::view-transition-new(root) {
+    animation: page-in 320ms var(--ease-out) both;
+  }
+}
+
+@keyframes page-out {
+  to {
+    opacity: 0;
+    translate: 0 -6px;
+  }
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    translate: 0 10px;
+  }
+}
+
+/* A view transition still runs under reduced motion unless its default
+   cross-fade is cancelled: the router cannot know the media query, so the
+   animations are switched off here instead. Navigation stays instant. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none;
   }
 }

@@ -1,7 +1,7 @@
-import { Section } from "@dasa122/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useRef } from "react";
+import { AdminHeading } from "../../components/admin-heading";
 import {
   PostEditor,
   type PostEditorInitial,
@@ -10,9 +10,6 @@ import {
 import { orpc } from "../../utils/orpc";
 
 const frame = "mx-auto w-full max-w-[80rem] px-6 md:px-10";
-const heading = "text-3xl leading-tight tracking-[-0.01em] md:text-4xl";
-const eyebrow =
-  "font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-muted";
 const errorText = "font-mono text-[0.75rem] text-ember-text";
 
 const emptyPost: PostEditorInitial = {
@@ -79,29 +76,28 @@ function NewPostPage() {
   return (
     <main className="flex-1">
       <div className={frame}>
-        <Section>
-          <header>
-            <p className={eyebrow}>Admin</p>
-            <h1 className={`mt-2 ${heading}`}>New post</h1>
-          </header>
+        <div className="pb-[clamp(4rem,10vw,9rem)] pt-6">
+          <AdminHeading title="New post" />
 
-          {(create.isError || update.isError || publish.isError) && (
-            <p className={`mt-8 ${errorText}`}>
-              {publish.isError
-                ? "Saved as a draft, but publishing failed."
-                : "Could not save the post."}
-            </p>
-          )}
+          <div className="glass-card mt-8 max-w-[62rem] p-6 sm:p-8">
+            {(create.isError || update.isError || publish.isError) && (
+              <p className={`mb-6 ${errorText}`}>
+                {publish.isError
+                  ? "Saved as a draft, but publishing failed."
+                  : "Could not save the post."}
+              </p>
+            )}
 
-          <PostEditor
-            initial={emptyPost}
-            isPending={
-              create.isPending || update.isPending || publish.isPending
-            }
-            onPublish={publishNow}
-            onSave={save}
-          />
-        </Section>
+            <PostEditor
+              initial={emptyPost}
+              isPending={
+                create.isPending || update.isPending || publish.isPending
+              }
+              onPublish={publishNow}
+              onSave={save}
+            />
+          </div>
+        </div>
       </div>
     </main>
   );
