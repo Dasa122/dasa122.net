@@ -38,7 +38,7 @@ export function SectionHeading({
           </p>
         )}
         <Tag
-          className={`${label ? "mt-2 " : ""}font-display text-[clamp(1.9rem,4vw,2.75rem)] leading-[1.05] tracking-[-0.02em]`}
+          className={`${label ? "mt-2 " : ""}font-display text-[clamp(2rem,4.4vw,3.25rem)] font-semibold leading-[0.98] tracking-[-0.045em]`}
         >
           {title}
         </Tag>

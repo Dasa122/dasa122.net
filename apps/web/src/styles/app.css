@@ -2,39 +2,82 @@
 
 @source "../../../../packages/ui/src";
 
-@theme {
-  --font-display: "Instrument Serif", Georgia, serif;
+/* ---------------------------------------------------------------------------
+   The design system: one sans for everything, an iris-to-magenta gradient
+   family for the colour, and glass for every surface that floats.
+
+   The legacy token names (`paper`, `ink`, `rule`, `ember`, `surface-2/3`,
+   `muted`) are kept because every page and primitive uses them; only their
+   values changed. `--grad-*` is the new gradient family, used for display
+   words, blobs and the primary button.
+   --------------------------------------------------------------------------- */
+@theme static {
   --font-sans:
     "Instrument Sans Variable", "Instrument Sans", ui-sans-serif, system-ui,
     sans-serif;
+  /* The display face is the sans. There is deliberately no serif anywhere. */
+  --font-display: var(--font-sans);
   --font-mono:
     "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
 
-  --color-paper: oklch(0.965 0.008 82);
-  --color-ink: oklch(0.18 0.01 60);
-  --color-rule: oklch(0.87 0.01 82);
-  --color-ember: oklch(0.58 0.17 45);
-  --color-ember-text: oklch(0.5 0.16 45);
-  --color-ember-fill: oklch(0.5 0.16 45);
-  --color-muted: oklch(0.49 0.012 68);
+  /* Light palette. `.dark` (below) is the shipped default. */
+  --color-paper: oklch(0.985 0.002 285);
+  --color-surface-2: oklch(0.965 0.004 285);
+  --color-surface-3: oklch(0.94 0.006 285);
+  --color-ink: oklch(0.12 0.02 285);
+  --color-muted: oklch(0.44 0.02 285);
+  --color-rule: oklch(0.12 0.02 285 / 0.12);
+  --color-ember: oklch(0.52 0.21 290);
+  --color-ember-text: oklch(0.48 0.2 292);
+  --color-ember-fill: oklch(0.5 0.22 292);
 
-  --color-surface-2: oklch(0.94 0.009 82);
-  --color-surface-3: oklch(0.905 0.012 82);
+  /* Gradient family. Light values are the dark ones at 0.45–0.56 lightness,
+     which clears 4.5:1 against the near-white paper. */
+  --grad-1: oklch(0.52 0.21 285);
+  --grad-2: oklch(0.55 0.23 340);
+  --grad-3: oklch(0.56 0.17 62);
+  --grad-4: oklch(0.5 0.13 165);
+
+  /* The button gradient is deliberately darker than --grad-1/2: near-white on
+     the decorative stops measures 3.3:1, and white-on-fill text must clear
+     4.5:1. Same hues, 0.52/0.55 lightness, measured 5.6:1. */
+  --grad-accent: linear-gradient(
+    135deg,
+    oklch(0.52 0.22 285),
+    oklch(0.55 0.23 340)
+  );
 
   /* Feed provenance only. Note follows the (possibly custom) ember text
      colour, so an accent override carries through; the two imported sources
-     get their own hue. Light values clear 4.5:1 on their 12% tint. */
+     get their own hue. Each clears 4.5:1 on its own 12% tint. */
   --color-source-note: var(--color-ember-text);
-  --color-source-github: oklch(0.48 0.12 155);
-  --color-source-linkedin: oklch(0.47 0.14 250);
-  /* Text on the ember fill. Deliberately never remapped: the fill is the same
-     value in both palettes, and paper is not (it is the dark canvas). */
-  --color-on-accent: oklch(0.97 0.005 85);
-  --radius-sm: 3px;
-  --radius-md: 6px;
+  --color-source-github: oklch(0.46 0.12 165);
+  --color-source-linkedin: oklch(0.44 0.14 255);
+
+  /* Text on the accent fill. Never remapped: the fill is a fixed dark
+     gradient in both palettes. */
+  --color-on-accent: oklch(0.99 0.002 285);
+
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-pill: 999px;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+
   --shadow-lift:
-    0 1px 1px oklch(0.35 0.03 60 / 0.05),
-    0 10px 30px -16px oklch(0.34 0.06 50 / 0.28);
+    0 1px 1px oklch(0.2 0.02 285 / 0.06),
+    0 18px 44px -22px oklch(0.2 0.06 285 / 0.32);
+  --shadow-accent: 0 12px 34px -14px oklch(0.5 0.22 292 / 0.55);
+  --shadow-accent-hover: 0 18px 46px -14px oklch(0.58 0.24 330 / 0.6);
+
+  /* Glass chrome: a translucent surface, an inset top highlight and a border
+     that is light on light and barely-there on dark. */
+  --glass-bg: oklch(1 0 0 / 0.55);
+  --glass-bg-hover: oklch(1 0 0 / 0.78);
+  --glass-edge: oklch(0.12 0.02 285 / 0.1);
+  --glass-hi: oklch(1 0 0 / 0.7);
 }
 
 :root {
@@ -44,26 +87,42 @@
   --hairline: var(--color-rule);
 }
 
+/* Dark is the default theme (`__root.tsx` puts `.dark` on <html> before the
+   first paint). Nothing here is a filter or an inversion: every token is a
+   chosen value. */
 .dark {
   color-scheme: dark;
-  --surface: oklch(0.145 0.012 60);
-  --text: oklch(0.94 0.006 85);
-  --hairline: oklch(0.3 0.012 65);
-  --color-paper: oklch(0.145 0.012 60);
-  --color-ink: oklch(0.94 0.006 85);
-  --color-rule: oklch(0.3 0.012 65);
-  --color-surface-2: oklch(0.185 0.013 60);
-  --color-surface-3: oklch(0.225 0.015 60);
+  --surface: oklch(0.145 0.015 285);
+  --text: oklch(0.97 0.005 285);
+  --hairline: oklch(1 0 0 / 0.1);
+
+  --color-paper: oklch(0.145 0.015 285);
+  --color-surface-2: oklch(0.185 0.018 285);
+  --color-surface-3: oklch(0.225 0.02 285);
+  --color-ink: oklch(0.97 0.005 285);
+  --color-muted: oklch(0.72 0.02 285);
+  --color-rule: oklch(1 0 0 / 0.1);
+  --color-ember: oklch(0.7 0.21 290);
+  --color-ember-text: oklch(0.78 0.18 295);
+  --color-ember-fill: oklch(0.62 0.23 292);
+
+  --grad-1: oklch(0.66 0.21 285);
+  --grad-2: oklch(0.7 0.24 340);
+  --grad-3: oklch(0.8 0.17 62);
+  --grad-4: oklch(0.82 0.15 165);
+
+  --color-source-github: oklch(0.8 0.15 165);
+  --color-source-linkedin: oklch(0.78 0.13 250);
+
+  --glass-bg: oklch(1 0 0 / 0.06);
+  --glass-bg-hover: oklch(1 0 0 / 0.1);
+  --glass-edge: oklch(1 0 0 / 0.1);
+  --glass-hi: oklch(1 0 0 / 0.08);
+
   --shadow-lift:
-    0 1px 1px oklch(0 0 0 / 0.45), 0 14px 34px -16px oklch(0 0 0 / 0.75);
-  --color-ember: oklch(0.68 0.19 42);
-  --color-ember-text: oklch(0.79 0.15 50);
-  /* 0.56, not 0.62: the solid button puts `on-accent` (near-white) on this
-     fill, and 0.62 measures 3.59:1. 0.56 measures 4.59:1. */
-  --color-ember-fill: oklch(0.56 0.17 44);
-  --color-muted: oklch(0.72 0.012 70);
-  --color-source-github: oklch(0.78 0.14 150);
-  --color-source-linkedin: oklch(0.78 0.11 235);
+    0 1px 1px oklch(0 0 0 / 0.4), 0 20px 50px -24px oklch(0 0 0 / 0.9);
+  --shadow-accent: 0 14px 40px -16px oklch(0.5 0.24 292 / 0.65);
+  --shadow-accent-hover: 0 20px 54px -16px oklch(0.6 0.26 330 / 0.7);
 }
 
 @layer base {
@@ -71,42 +130,37 @@
     background: var(--surface);
   }
 
+  /* Three large, heavily blurred colour fields under a near-black canvas. They
+     are fixed, so the page scrolls through the colour rather than dragging it
+     along. `background-color` is the fallback under the gradients. */
   body {
     display: flex;
     min-height: 100dvh;
     flex-direction: column;
-    background:
+    background-color: var(--surface);
+    background-image:
       radial-gradient(
-        58rem 34rem at 6% -14%,
-        oklch(0.995 0.02 88 / 1),
+        58rem 40rem at 8% -12%,
+        color-mix(in oklab, var(--grad-1) 16%, transparent),
+        transparent 66%
+      ),
+      radial-gradient(
+        46rem 34rem at 94% 2%,
+        color-mix(in oklab, var(--grad-2) 13%, transparent),
         transparent 62%
       ),
       radial-gradient(
-        38rem 28rem at 94% 2%,
-        oklch(0.965 0.018 72 / 1),
-        transparent 58%
-      ),
-      var(--surface);
+        44rem 34rem at 52% 108%,
+        color-mix(in oklab, var(--grad-3) 11%, transparent),
+        transparent 60%
+      );
     background-attachment: fixed;
+    background-repeat: no-repeat;
     color: var(--text);
     font-family: var(--font-sans);
+    font-optical-sizing: auto;
     text-wrap: pretty;
     -webkit-font-smoothing: antialiased;
-  }
-
-  .dark body {
-    background:
-      radial-gradient(
-        58rem 34rem at 6% -14%,
-        oklch(0.215 0.022 62),
-        transparent 62%
-      ),
-      radial-gradient(
-        38rem 28rem at 94% 2%,
-        oklch(0.19 0.026 45),
-        transparent 58%
-      ),
-      var(--surface);
   }
 
   /* A fixed film of noise over the whole page; never eats a pointer event. */
@@ -116,174 +170,64 @@
     inset: 0;
     z-index: 60;
     pointer-events: none;
-    opacity: 0.04;
+    opacity: 0.03;
     mix-blend-mode: multiply;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 
   .dark body::after {
     mix-blend-mode: screen;
-    opacity: 0.055;
   }
 
+  /* Product-site display type: heavy, tight, optically sized. The tracking is
+     the identity change — no serif, no letterspaced magazine headline. */
   h1,
   h2,
   h3 {
     font-family: var(--font-display);
-    font-weight: 400;
+    font-weight: 650;
+    font-optical-sizing: auto;
+    letter-spacing: -0.045em;
+    line-height: 0.92;
     text-wrap: balance;
   }
 
   :focus-visible {
-    outline: 1px solid var(--color-ember);
-    outline-offset: 2px;
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  html {
-    scroll-behavior: smooth;
-  }
-
-  [data-reveal] {
-    opacity: 0;
-    transform: translateY(14px);
-    transition:
-      opacity 600ms var(--ease, cubic-bezier(0.2, 0, 0, 1)),
-      transform 600ms var(--ease, cubic-bezier(0.2, 0, 0, 1));
-    transition-delay: calc(var(--reveal-i, 0) * 70ms);
-  }
-
-  [data-reveal="in"] {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@keyframes draw {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
-
-.draw-in {
-  transform-origin: left;
-  animation: draw 700ms cubic-bezier(0.2, 0, 0, 1) both;
-}
-
-/* A soft two-tone wash behind the display type: ember from the left, amber
-   from above. The parent clips it, so it can never widen the page. */
-.hero-glow {
-  background:
-    radial-gradient(
-      42rem 30rem at 16% 24%,
-      color-mix(in oklab, var(--color-ember) 10%, transparent),
-      transparent 64%
-    ),
-    radial-gradient(
-      26rem 20rem at 62% -4%,
-      color-mix(in oklab, oklch(0.78 0.15 82) 7%, transparent),
-      transparent 62%
-    );
-  filter: blur(30px);
-}
-
-.dark .hero-glow {
-  background:
-    radial-gradient(
-      42rem 30rem at 16% 24%,
-      color-mix(in oklab, var(--color-ember) 16%, transparent),
-      transparent 64%
-    ),
-    radial-gradient(
-      26rem 20rem at 62% -4%,
-      color-mix(in oklab, oklch(0.78 0.15 82) 11%, transparent),
-      transparent 62%
-    );
-  filter: blur(38px);
-}
-
-/* Tailwind's ping is decorative only; keep the dot steady for anyone who
-   asked motion to stop. */
-@media (prefers-reduced-motion: reduce) {
-  .animate-ping {
-    animation: none;
-  }
-
-  .draw-in {
-    animation: none;
+    outline: 2px solid var(--color-ember);
+    outline-offset: 3px;
+    border-radius: var(--radius-sm);
   }
 }
 
 /* ---------------------------------------------------------------------------
-   Scroll-driven motion. Everything here is CSS-first: without a scroll
-   timeline the decorative line simply does not render, and section content is
-   never left hidden.
+   Motion primitives. The `.reveal` class is pure CSS: where view timelines
+   exist it animates from hidden, and where they do not exist the rule never
+   applies, so content is visible by default rather than stuck at opacity 0.
    --------------------------------------------------------------------------- */
-
-/* A 2px ember line at the very top of the viewport, above the sticky header
-   (z-40) but below the noise film (z-60), and never in the way of a click. */
-.scroll-progress {
-  display: none;
-}
-
-@supports (animation-timeline: scroll()) {
-  .scroll-progress {
-    position: fixed;
-    inset-inline: 0;
-    top: 0;
-    z-index: 50;
-    display: block;
-    height: 2px;
-    background: var(--color-ember);
-    transform-origin: left;
-    pointer-events: none;
-    animation: grow-x linear both;
-    animation-timeline: scroll(root block);
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 10% cover 35%;
+    }
   }
 }
 
-@keyframes grow-x {
+@keyframes reveal {
   from {
-    transform: scaleX(0);
+    opacity: 0;
+    translate: 0 40px;
   }
   to {
-    transform: scaleX(1);
+    opacity: 1;
+    translate: 0 0;
   }
 }
 
-/* The kicker pins under the header while its section's rows scroll past. It
-   only does so above md: on a phone the header is two lines tall, and a
-   pinned label would eat the viewport. It is a full-width band so rows slide
-   beneath it instead of sitting on the same line as the label. */
-.section-kicker {
-  display: block;
-}
-
-@media (width >= 48rem) {
-  .section-kicker {
-    position: sticky;
-    top: 4.3rem;
-    z-index: 10;
-    background: color-mix(in oklab, var(--surface) 88%, transparent);
-    backdrop-filter: blur(3px);
-  }
-}
-
-/* Between md and ~52rem the primary nav wraps to a second line, which makes
-   the header taller; the kicker's offset follows it. */
-@media (width >= 48rem) and (width < 52rem) {
-  .section-kicker {
-    top: 5.5rem;
-  }
-}
-
-/* A view-timeline entrance, opted into by the hook only where it is
-   supported. The attribute is set from an effect, so no JavaScript means no
-   [data-reveal] and therefore no hidden content. */
+/* The hook (`use-reveal.ts`) adds `.reveal-vt` where view timelines exist and
+   `data-reveal="in"` where they do not; both paths start from a visible base
+   state, so nothing is ever stranded at opacity 0. */
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
     [data-reveal].reveal-vt {
@@ -300,7 +244,7 @@
 @keyframes reveal-in {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(18px);
   }
   to {
     opacity: 1;
@@ -308,12 +252,27 @@
   }
 }
 
-/* The wordmark enters as a left-to-right wipe. Vertical insets are negative so
-   a serif's overshoot and descenders are never clipped; the base state (no
-   animation, e.g. reduced motion) is fully visible. */
 @media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  [data-reveal] {
+    opacity: 0;
+    transform: translateY(18px);
+    transition:
+      opacity 700ms var(--ease-out),
+      transform 700ms var(--ease-out);
+    transition-delay: calc(var(--reveal-i, 0) * 70ms);
+  }
+
+  [data-reveal="in"] {
+    opacity: 1;
+    transform: none;
+  }
+
   .hero-wipe {
-    animation: wipe-x 900ms cubic-bezier(0.2, 0, 0, 1) both;
+    animation: wipe-x 900ms var(--ease-out) both;
   }
 }
 
@@ -326,63 +285,176 @@
   }
 }
 
-/* A row that lifts a hair on hover, and does the same when anything inside it
-   takes focus, so the keyboard gets the same affordance as the mouse. */
-.row-lift {
-  transition:
-    background-color 200ms cubic-bezier(0.2, 0, 0, 1),
-    translate 200ms cubic-bezier(0.2, 0, 0, 1),
-    box-shadow 200ms cubic-bezier(0.2, 0, 0, 1);
-}
-
-@media (hover: hover) {
-  .row-lift:hover {
-    translate: 0 -1px;
-    box-shadow: var(--shadow-lift);
+@keyframes draw {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
   }
 }
 
-.row-lift:focus-within {
-  translate: 0 -1px;
-  box-shadow: var(--shadow-lift);
+.draw-in {
+  transform-origin: left;
+  animation: draw 700ms var(--ease-out) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  /* The progress bar carries no information when it cannot move, so it goes. */
-  .scroll-progress {
-    display: none;
+  .reveal,
+  .animate-ping,
+  .draw-in,
+  .hero-wipe {
+    animation: none;
   }
+}
 
-  .row-lift {
-    transition: background-color 200ms linear;
+/* ---------------------------------------------------------------------------
+   Scroll-driven motion: a gradient progress line at the very top, and the
+   hero stage that shrinks and fades as it leaves. Both are decorative; the
+   fallback is simply no animation and no hidden content.
+   --------------------------------------------------------------------------- */
+.scroll-progress {
+  display: none;
+}
+
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .scroll-progress {
+      position: fixed;
+      inset-inline: 0;
+      top: 0;
+      z-index: 50;
+      display: block;
+      height: 2px;
+      background: linear-gradient(
+        90deg,
+        var(--grad-1),
+        var(--grad-2),
+        var(--grad-3)
+      );
+      transform-origin: left;
+      pointer-events: none;
+      animation: grow-x linear both;
+      animation-timeline: scroll(root block);
+    }
   }
+}
 
-  .row-lift:hover,
-  .row-lift:focus-within {
-    translate: none;
-    box-shadow: none;
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* The hero leaves in three dimensions: it shrinks, fades and slides up while
+   the colour field behind it drifts at a different rate (parallax). */
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-stage {
+      animation: hero-out linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 92vh;
+    }
+
+    .hero-parallax {
+      animation: blob-drift linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 100vh;
+    }
+  }
+}
+
+@keyframes hero-out {
+  from {
+    opacity: 1;
+    scale: 1;
+    translate: 0 0;
+  }
+  to {
+    opacity: 0;
+    scale: 0.94;
+    translate: 0 -60px;
+  }
+}
+
+@keyframes blob-drift {
+  from {
+    translate: 0 -4%;
+  }
+  to {
+    translate: 0 18%;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Glass chrome. The header is a floating translucent bar: blur + saturation,
+   an inset top highlight, and no bottom border (the masked blur band under it
+   does the separation instead).
+   --------------------------------------------------------------------------- */
+.glass {
+  background: color-mix(in oklab, var(--color-paper) 62%, transparent);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: inset 0 1px 0 var(--glass-hi);
+}
+
+.glass-panel {
+  background: color-mix(in oklab, var(--color-paper) 55%, transparent);
+  border: 1px solid var(--glass-edge);
+  box-shadow: inset 0 1px 0 var(--glass-hi);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+}
+
+/* The kicker pins under the header while its section's rows scroll past. It
+   only does so above md: on a phone the header is two lines tall. */
+.section-kicker {
+  display: block;
+}
+
+@media (width >= 48rem) {
+  .section-kicker {
+    position: sticky;
+    top: 4.3rem;
+    z-index: 10;
+    background: color-mix(in oklab, var(--color-paper) 78%, transparent);
+    backdrop-filter: blur(8px);
+  }
+}
+
+/* Between md and ~52rem the primary nav wraps to a second line, which makes
+   the header taller; the kicker's offset follows it. */
+@media (width >= 48rem) and (width < 52rem) {
+  .section-kicker {
+    top: 5.5rem;
   }
 }
 
 /* ---------------------------------------------------------------------------
    Small-screen navigation. The inline nav is display:none below md, so the
    panel takes over; both carry the same "Primary" label but only one is ever
-   in the accessibility tree.
+   in the accessibility tree. The panel is glass like the bar it hangs from.
    --------------------------------------------------------------------------- */
-
 .site-menu {
   position: absolute;
   inset-inline: 0;
   top: 100%;
+  /* The header owns a backdrop-filter, which makes it a backdrop root: a
+     nested backdrop-filter would sample the header, not the page, so the panel
+     is an opaque sheet instead of a translucent one. */
   background: var(--color-paper);
-  border-bottom: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--glass-edge);
+  box-shadow: inset 0 1px 0 var(--glass-hi);
   visibility: hidden;
   opacity: 0;
-  translate: 0 -4px;
+  translate: 0 -6px;
   transition:
-    opacity 180ms cubic-bezier(0.2, 0, 0, 1),
-    translate 180ms cubic-bezier(0.2, 0, 0, 1),
-    visibility 180ms;
+    opacity 220ms var(--ease-out),
+    translate 220ms var(--ease-out),
+    visibility 220ms;
 }
 
 .site-menu[data-open="true"] {
@@ -415,7 +487,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem 1.25rem;
-    border-top: 1px solid var(--hairline);
+    border-top: 1px solid var(--glass-edge);
     padding: 0.75rem 1.5rem;
     font-family: var(--font-mono);
     font-size: 0.6875rem;
@@ -425,22 +497,21 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Progressive blur under the sticky header. Cult UI stacks several masked
-   blurred layers; one masked `backdrop-filter` gets most of the way there for
-   a single paint pass. The layer is a leaf inside the header (pinned to its
-   bottom edge) so it scrolls with it and owns no children, and the mask makes
-   the blur fade out downward instead of ending on a hard edge.
+   Progressive blur under the floating header. The layer is a leaf inside the
+   header (pinned to its bottom edge) so it scrolls with it and owns no
+   children; the mask fades the blur out instead of ending on a hard line.
    --------------------------------------------------------------------------- */
 .header-blur {
   position: absolute;
   inset-inline: 0;
   top: 100%;
-  height: 34px;
+  height: 42px;
   /* Behind the mobile menu panel, which also hangs off the header's bottom
      edge: an open panel must not be blurred by the band sitting on top of it. */
   z-index: -1;
   pointer-events: none;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
   mask-image: linear-gradient(to bottom, black, transparent);
 }
 
@@ -453,15 +524,9 @@
 
 /* ---------------------------------------------------------------------------
    Row spotlight. `use-spotlight.ts` writes `--mx` / `--my` as percentages on
-   a rAF tick; this layer just paints the pool. The row's own background is
-   painted first, the layer next, and the stretched link `::after` and the
-   focus ring after it, so the hit area and the keyboard ring stay on top.
-
-   The layer's opacity is capped at 0.10 in the hover state below, so the
-   gradient stop has to carry the strength: 14% ember there would multiply to
-   1.4% alpha, which is invisible on either surface. 50% in dark and 40% in
-   light (ember is darker and more saturated on paper, so the same alpha
-   reads stronger there) land at a 5% / 4% peak.
+   a rAF tick; this layer paints the pool. The row's own background is painted
+   first, the layer next, and the stretched link `::after` and the focus ring
+   after it, so the hit area and the keyboard ring stay on top.
    --------------------------------------------------------------------------- */
 .row-spotlight {
   position: absolute;
@@ -470,16 +535,16 @@
   pointer-events: none;
   opacity: 0;
   background: radial-gradient(
-    14rem 14rem at var(--mx, 50%) var(--my, 50%),
+    16rem 16rem at var(--mx, 50%) var(--my, 50%),
     color-mix(in oklab, var(--color-ember) 40%, transparent),
     transparent 70%
   );
-  transition: opacity 200ms cubic-bezier(0.2, 0, 0, 1);
+  transition: opacity 220ms var(--ease-out);
 }
 
 .dark .row-spotlight {
   background: radial-gradient(
-    14rem 14rem at var(--mx, 50%) var(--my, 50%),
+    16rem 16rem at var(--mx, 50%) var(--my, 50%),
     color-mix(in oklab, var(--color-ember) 50%, transparent),
     transparent 70%
   );
@@ -488,15 +553,46 @@
 @media (hover: hover) {
   .row-lift:hover > .row-spotlight,
   .row-lift:focus-within > .row-spotlight {
-    opacity: 0.1;
+    opacity: 0.12;
   }
 }
 
-/* No pointer to follow, or motion was asked to stop: the layer is not there at
-   all, so it can never leave a stray glow or a transition behind. */
 @media (hover: none), (prefers-reduced-motion: reduce) {
   .row-spotlight {
     display: none;
+  }
+}
+
+/* A row that lifts on hover, and does the same when anything inside takes
+   focus, so the keyboard gets the same affordance as the mouse. */
+.row-lift {
+  transition:
+    background-color 240ms var(--ease-out),
+    translate 240ms var(--ease-out),
+    box-shadow 240ms var(--ease-out);
+}
+
+@media (hover: hover) {
+  .row-lift:hover {
+    translate: 0 -2px;
+    box-shadow: var(--shadow-lift);
+  }
+}
+
+.row-lift:focus-within {
+  translate: 0 -2px;
+  box-shadow: var(--shadow-lift);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row-lift {
+    transition: background-color 200ms linear;
+  }
+
+  .row-lift:hover,
+  .row-lift:focus-within {
+    translate: none;
+    box-shadow: none;
   }
 }
 
@@ -510,6 +606,7 @@
 .marquee {
   overflow: hidden;
   border-block: 1px solid var(--hairline);
+  background: color-mix(in oklab, var(--color-paper) 42%, transparent);
   mask-image: linear-gradient(
     to right,
     transparent,
@@ -536,7 +633,7 @@
   flex: none;
   align-items: center;
   gap: 0.75rem;
-  padding-block: 0.75rem;
+  padding-block: 0.9rem;
   color: var(--color-muted);
   font-family: var(--font-mono);
   font-size: 0.6875rem;
@@ -546,14 +643,16 @@
 }
 
 /* The separator is part of the item, not a flex child of its own, so a
-   wrapping static band never starts a line with a stray middot. */
+   wrapping static band never starts a line with a stray glyph. */
 .marquee-item {
   white-space: nowrap;
 }
 
 .marquee-item::after {
-  content: "·";
+  content: "◆";
   margin-left: 0.75rem;
+  font-size: 0.5em;
+  vertical-align: 0.15em;
   color: var(--color-ember);
 }
 
@@ -568,7 +667,7 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .marquee-track {
-    animation: marquee-scroll 28s linear infinite;
+    animation: marquee-scroll 32s linear infinite;
   }
 
   .marquee:hover .marquee-track {
@@ -611,4 +710,47 @@
       padding-inline: 2.5rem;
     }
   }
+}
+
+/* ---------------------------------------------------------------------------
+   The hero's colour field: three big blobs, blurred hard enough to read as
+   light rather than as shapes. The parent clips them.
+   --------------------------------------------------------------------------- */
+.hero-glow {
+  background:
+    radial-gradient(
+      40rem 32rem at 22% 18%,
+      color-mix(in oklab, var(--grad-1) 30%, transparent),
+      transparent 68%
+    ),
+    radial-gradient(
+      34rem 28rem at 74% 6%,
+      color-mix(in oklab, var(--grad-2) 24%, transparent),
+      transparent 66%
+    ),
+    radial-gradient(
+      30rem 26rem at 56% 96%,
+      color-mix(in oklab, var(--grad-3) 16%, transparent),
+      transparent 62%
+    );
+  filter: blur(46px);
+}
+
+.dark .hero-glow {
+  background:
+    radial-gradient(
+      40rem 32rem at 22% 18%,
+      color-mix(in oklab, var(--grad-1) 34%, transparent),
+      transparent 68%
+    ),
+    radial-gradient(
+      34rem 28rem at 74% 6%,
+      color-mix(in oklab, var(--grad-2) 26%, transparent),
+      transparent 66%
+    ),
+    radial-gradient(
+      30rem 26rem at 56% 96%,
+      color-mix(in oklab, var(--grad-3) 18%, transparent),
+      transparent 62%
+    );
 }

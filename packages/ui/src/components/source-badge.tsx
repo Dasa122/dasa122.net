@@ -7,8 +7,8 @@ const labels: Record<Source, string> = {
 };
 
 /**
- * The source tokens are the only place colour carries meaning here: teal for
- * GitHub, blue for LinkedIn, ember for a note. Each is measured at 4.5:1 or
+ * The source tokens are the only place colour carries meaning here: mint for
+ * GitHub, blue for LinkedIn, iris for a note. Each is measured at 4.5:1 or
  * better against its own 12% tint in both palettes.
  */
 const tones: Record<Source, string> = {
@@ -22,7 +22,7 @@ const tones: Record<Source, string> = {
 export function SourceBadge({ source }: { source: Source }) {
   return (
     <span
-      className={`inline-flex items-center rounded-[var(--radius-sm)] px-1.5 py-0.5 font-mono text-[0.625rem] uppercase tracking-[0.14em] ${tones[source]}`}
+      className={`inline-flex items-center rounded-[var(--radius-pill)] px-2 py-0.5 font-mono text-[0.625rem] uppercase leading-none tracking-[0.14em] shadow-[inset_0_1px_0_var(--glass-hi)] ${tones[source]}`}
     >
       {labels[source]}
     </span>
