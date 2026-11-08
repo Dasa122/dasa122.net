@@ -10,6 +10,7 @@ import { createTestDb, migrateTestDb, resetTables } from "../../test/helpers";
 import {
   adminCreateProject,
   adminUpdateProject,
+  getPublishedProjectBySlug,
   listPublishedProjects,
 } from "./repository";
 
@@ -61,5 +62,42 @@ describe("projects", () => {
       first.slug,
       second.slug,
     ]);
+  });
+
+  test("a project with a markdown body renders bodyHtml on read", async () => {
+    const created = await adminCreateProject({
+      ...project("With body"),
+      body: "## The long version\n\nSome **bold** prose.",
+    });
+
+    const detail = await getPublishedProjectBySlug(created.slug);
+
+    expect(detail?.bodyHtml).toContain("<h2>The long version</h2>");
+    expect(detail?.bodyHtml).toContain("<strong>bold</strong>");
+  });
+
+  test("a project without a body has no bodyHtml", async () => {
+    const missing = await adminCreateProject(project("No body"));
+    const empty = await adminCreateProject({
+      ...project("Empty body"),
+      body: "   ",
+    });
+
+    expect(
+      (await getPublishedProjectBySlug(missing.slug))?.bodyHtml,
+    ).toBeNull();
+    expect((await getPublishedProjectBySlug(empty.slug))?.bodyHtml).toBeNull();
+  });
+
+  test("a script in the body is sanitised out of bodyHtml", async () => {
+    const created = await adminCreateProject({
+      ...project("Script"),
+      body: "Hello\n\n<script>alert(1)</script>",
+    });
+
+    const detail = await getPublishedProjectBySlug(created.slug);
+
+    expect(detail?.bodyHtml).not.toContain("<script");
+    expect(detail?.bodyHtml).not.toContain("alert(1)");
   });
 });

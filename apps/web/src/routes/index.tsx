@@ -8,6 +8,7 @@ import { ProjectCard } from "../components/project-card";
 import { SectionKicker } from "../components/section-heading";
 import { useCountUp } from "../hooks/use-count-up";
 import { canonicalOrigin } from "../utils/canonical";
+import { formatMonthYear } from "../utils/format";
 import { orpc } from "../utils/orpc";
 
 const POSTS_LIMIT = 5;
@@ -98,10 +99,26 @@ function BandFigure({
   );
 }
 
+/** The oldest `updatedAt` in the snapshot: where the pull window starts. */
+function earliestUpdate(overview: Overview | undefined): string | null {
+  let earliest: string | null = null;
+  for (const pull of overview?.pulls ?? []) {
+    if (
+      earliest === null ||
+      Date.parse(pull.updatedAt) < Date.parse(earliest)
+    ) {
+      earliest = pull.updatedAt;
+    }
+  }
+  return earliest;
+}
+
 /**
  * The GitHub band. Every figure comes from the cached pull/repo snapshot; a
  * figure the snapshot does not have yet is an em dash, never a zero. Stars and
  * forks are deliberately absent: they are genuinely 0 and would read as broken.
+ * The caption names the window the figures cover, because the repo count is
+ * every public repo while the pull count is only the most recent page.
  */
 function GithubBand({ overview }: { overview: Overview | undefined }) {
   const repos = useCountUp(overview?.repos.length);
@@ -110,14 +127,24 @@ function GithubBand({ overview }: { overview: Overview | undefined }) {
     overview ? overview.pulls.filter((pull) => pull.merged).length : undefined,
   );
 
+  const count = overview?.pulls.length ?? 0;
+  const since = formatMonthYear(earliestUpdate(overview));
+  const caption =
+    since === ""
+      ? "Public repositories."
+      : `Public repositories, plus the ${count} most recently updated pull request${count === 1 ? "" : "s"} — since ${since}.`;
+
   return (
     <section aria-label="GitHub" className="stats-band">
-      <div
-        className={`${frame} grid gap-10 py-[clamp(3rem,7vw,5rem)] sm:grid-cols-3`}
-      >
-        <BandFigure label="Repos" value={repos.value} />
-        <BandFigure label="Pull requests" value={pulls.value} />
-        <BandFigure label="Merged" value={merged.value} />
+      <div className={`${frame} py-[clamp(3rem,7vw,5rem)]`}>
+        <div className="grid gap-10 sm:grid-cols-3">
+          <BandFigure label="Repos" value={repos.value} />
+          <BandFigure label="Pull requests" value={pulls.value} />
+          <BandFigure label="Merged" value={merged.value} />
+        </div>
+        <p className="mt-10 max-w-[52ch] text-[0.8125rem] leading-relaxed text-muted">
+          {caption}
+        </p>
       </div>
     </section>
   );

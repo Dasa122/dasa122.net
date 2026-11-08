@@ -4,6 +4,7 @@ import { withoutDefaults } from "./strip-defaults";
 /** A project as the work pages and the admin editor render it. */
 export const projectSchema = z.object({
   body: z.string().nullable(),
+  bodyHtml: z.string().nullable(),
   coverImage: z.string().nullable(),
   createdAt: z.iso.datetime(),
   featured: z.boolean(),
