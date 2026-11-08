@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 export function Tag({ children }: { children: ReactNode }) {
   return (
-    <span className="inline-block rounded-[var(--radius-sm)] border border-[var(--hairline)] bg-[color-mix(in_oklab,var(--text)_4%,transparent)] px-1.5 py-0.5 font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-muted">
+    <span className="inline-flex items-center rounded-[var(--radius-pill)] border border-[var(--glass-edge)] bg-[var(--glass-bg)] px-2.5 py-1 font-mono text-[0.625rem] uppercase leading-none tracking-[0.12em] text-muted shadow-[inset_0_1px_0_var(--glass-hi)]">
       {children}
     </span>
   );

@@ -44,7 +44,7 @@ export function PostRow({ post }: { post: PostSummary }) {
         <SourceBadge source={post.source} />
       </div>
       <div className="min-w-0 flex-1">
-        <h3 className="text-xl leading-snug tracking-[-0.01em]">
+        <h3 className="text-xl leading-snug tracking-[-0.01em] [overflow-wrap:anywhere]">
           {post.slug ? (
             <Link
               className={linkClass}
