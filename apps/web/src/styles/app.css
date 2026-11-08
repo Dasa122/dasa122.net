@@ -959,3 +959,21 @@
     display: none;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   The project page's meta rail. It follows the reader only where there are two
+   columns to put it beside. Under reduced motion it stays in the flow: a rail
+   that tracks the scroll is motion, and the page reads fine without it.
+   --------------------------------------------------------------------------- */
+@media (width >= 64rem) {
+  .project-rail {
+    align-self: start;
+  }
+}
+
+@media (width >= 64rem) and (prefers-reduced-motion: no-preference) {
+  .project-rail {
+    position: sticky;
+    top: calc(var(--header-h) + 1.5rem);
+  }
+}
