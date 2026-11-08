@@ -1,17 +1,16 @@
-import { buttonClassName, Rule } from "@dasa122/ui";
+import type { githubOverviewSchema } from "@dasa122/contract";
+import { buttonClassName } from "@dasa122/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Fragment } from "react";
 import { Marquee } from "../components/marquee";
 import { PostCard } from "../components/post-card";
-import { PostRow } from "../components/post-row";
 import { ProjectCard } from "../components/project-card";
 import { SectionKicker } from "../components/section-heading";
 import { useCountUp } from "../hooks/use-count-up";
 import { canonicalOrigin } from "../utils/canonical";
 import { orpc } from "../utils/orpc";
 
-const POSTS_LIMIT = 10;
+const POSTS_LIMIT = 5;
 const TITLE = "Dasa122 — notes on building software";
 const DESCRIPTION =
   "Dasa122 builds careful software for the web: notes on interfaces, APIs, and the systems between them.";
@@ -39,8 +38,9 @@ const postsOptions = orpc.posts.list.queryOptions({
   input: { limit: POSTS_LIMIT, sources: ["own", "linkedin"] },
 });
 const projectsOptions = orpc.projects.list.queryOptions({ input: {} });
-// The root loader has already cached this, so reading it here is free.
-const siteOptions = orpc.site.get.queryOptions({ input: {} });
+// A cached snapshot read: the loader prefetches it, so the band is painted
+// with real figures on the server render.
+const githubOptions = orpc.github.overview.queryOptions({ input: {} });
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -62,6 +62,7 @@ export const Route = createFileRoute("/")({
     await Promise.all([
       context.queryClient.prefetchQuery(postsOptions),
       context.queryClient.prefetchQuery(projectsOptions),
+      context.queryClient.prefetchQuery(githubOptions),
     ]);
   },
 });
@@ -75,35 +76,67 @@ function Eyebrow({ children }: { children: string }) {
   );
 }
 
+type Overview = ReturnType<typeof githubOverviewSchema.parse>;
+
+/** One giant figure in the band; `undefined` reads as "not known yet". */
+function BandFigure({
+  label,
+  value,
+}: {
+  label: string;
+  value: number | undefined;
+}) {
+  return (
+    <div>
+      <p className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-muted">
+        {label}
+      </p>
+      <p className="mt-3 font-display text-[clamp(3.5rem,9vw,6.5rem)] font-semibold leading-[0.92] tracking-[-0.05em] tabular-nums">
+        {value ?? "—"}
+      </p>
+    </div>
+  );
+}
+
+/**
+ * The GitHub band. Every figure comes from the cached pull/repo snapshot; a
+ * figure the snapshot does not have yet is an em dash, never a zero. Stars and
+ * forks are deliberately absent: they are genuinely 0 and would read as broken.
+ */
+function GithubBand({ overview }: { overview: Overview | undefined }) {
+  const repos = useCountUp(overview?.repos.length);
+  const pulls = useCountUp(overview?.pulls.length);
+  const merged = useCountUp(
+    overview ? overview.pulls.filter((pull) => pull.merged).length : undefined,
+  );
+
+  return (
+    <section aria-label="GitHub" className="stats-band">
+      <div
+        className={`${frame} grid gap-10 py-[clamp(3rem,7vw,5rem)] sm:grid-cols-3`}
+      >
+        <BandFigure label="Repos" value={repos.value} />
+        <BandFigure label="Pull requests" value={pulls.value} />
+        <BandFigure label="Merged" value={merged.value} />
+      </div>
+    </section>
+  );
+}
+
 function HomePage() {
   const posts = useQuery(postsOptions);
   const projects = useQuery(projectsOptions);
-  const site = useQuery(siteOptions);
+  const github = useQuery(githubOptions);
 
   const items = posts.data?.items ?? [];
   const featured = (projects.data?.items ?? []).filter(
     (project) => project.featured,
   );
 
-  // The first three notes are cards, the rest is the list.
-  const cards = items.slice(0, 3);
-  const rest = items.slice(3);
-
-  const postsCount = useCountUp(posts.data?.total);
-  const projectsCount = useCountUp(projects.data?.total);
-  // A missing or errored site query leaves this undefined: the band then
-  // falls back to two columns rather than claiming zero sources.
-  const sourceTotal = site.data?.enabledSources.length;
-  const sourcesCount = useCountUp(sourceTotal);
-  const statsColumns =
-    sourceTotal !== undefined && sourceTotal > 0
-      ? "sm:grid-cols-3"
-      : "sm:grid-cols-2";
-
   return (
     <main className="flex-1">
       {/* ---------------------------------------------------------------- */}
-      {/* Hero: one screen, the headline, two ways in, and the colour field. */}
+      {/* Hero: one screen, the headline, three ways in, and the colour field. */}
       {/* ---------------------------------------------------------------- */}
       <section className="hero-stage relative isolate flex min-h-[calc(100dvh-4.25rem)] items-center overflow-hidden">
         <div
@@ -123,11 +156,17 @@ function HomePage() {
           </p>
 
           <div className="mt-10 flex flex-wrap items-center gap-3">
-            <Link className={buttonClassName("solid")} to="/news">
+            <Link className={`${buttonClassName("solid")} min-h-11`} to="/news">
               Read the notes
             </Link>
-            <Link className={buttonClassName("quiet")} to="/work">
+            <Link className={`${buttonClassName("quiet")} min-h-11`} to="/work">
               See the work
+            </Link>
+            <Link
+              className={`${buttonClassName("quiet")} min-h-11`}
+              to="/about"
+            >
+              About me
             </Link>
           </div>
 
@@ -139,11 +178,17 @@ function HomePage() {
               </span>
               Building in public
             </span>
-            <span aria-hidden="true" className="h-3 w-px bg-rule" />
+            <span
+              aria-hidden="true"
+              className="hidden h-3 w-px bg-rule sm:block"
+            />
             <span className="tabular-nums">
               {posts.data?.total ?? "—"} posts
             </span>
-            <span aria-hidden="true" className="h-3 w-px bg-rule" />
+            <span
+              aria-hidden="true"
+              className="hidden h-3 w-px bg-rule sm:block"
+            />
             <span className="tabular-nums">
               {projects.data?.total ?? "—"} projects
             </span>
@@ -195,7 +240,7 @@ function HomePage() {
       )}
 
       {/* ---------------------------------------------------------------- */}
-      {/* Journal: the three newest notes as cards, the rest as rows.        */}
+      {/* Journal: the five newest notes as cards, then one way to the rest. */}
       {/* ---------------------------------------------------------------- */}
       <section className={`${frame} py-[clamp(4rem,10vw,8rem)]`}>
         <div className="flex items-end justify-between gap-6">
@@ -229,79 +274,30 @@ function HomePage() {
           </p>
         )}
 
-        {cards.length > 0 && (
+        {items.length > 0 && (
           <div className="reveal mt-8 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-            {cards.map((post) => (
+            {items.map((post) => (
               <PostCard key={post.id} post={post} />
             ))}
           </div>
         )}
 
-        {rest.length > 0 && (
-          <div className="mt-10">
-            <Rule />
-            {rest.map((post, index) => (
-              <Fragment key={post.id}>
-                {index > 0 && <Rule />}
-                <PostRow post={post} />
-              </Fragment>
-            ))}
-          </div>
+        {items.length > 0 && (
+          <p className="mt-8">
+            <Link
+              className="inline-flex min-h-11 items-center font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-muted transition-colors duration-300 hover:text-ember-text"
+              to="/news"
+            >
+              Older notes →
+            </Link>
+          </p>
         )}
       </section>
 
       {/* ---------------------------------------------------------------- */}
-      {/* The band: the three totals the page actually knows.                */}
+      {/* The band: what the cached GitHub snapshot knows.                    */}
       {/* ---------------------------------------------------------------- */}
-      <section aria-label="At a glance" className="stats-band">
-        <div
-          className={`${frame} grid gap-10 py-[clamp(3rem,7vw,5rem)] ${statsColumns}`}
-        >
-          <div>
-            <p className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-muted">
-              Published
-            </p>
-            <p className="mt-3 font-display text-[clamp(3.5rem,9vw,6.5rem)] font-semibold leading-[0.92] tracking-[-0.05em] tabular-nums">
-              <span ref={postsCount.ref}>
-                {postsCount.value ?? posts.data?.total ?? "—"}
-              </span>
-            </p>
-            <p className="mt-2 font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-muted">
-              posts
-            </p>
-          </div>
-
-          <div>
-            <p className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-muted">
-              Shipped
-            </p>
-            <p className="mt-3 font-display text-[clamp(3.5rem,9vw,6.5rem)] font-semibold leading-[0.92] tracking-[-0.05em] tabular-nums">
-              <span ref={projectsCount.ref}>
-                {projectsCount.value ?? projects.data?.total ?? "—"}
-              </span>
-            </p>
-            <p className="mt-2 font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-muted">
-              projects
-            </p>
-          </div>
-
-          {sourceTotal !== undefined && sourceTotal > 0 && (
-            <div>
-              <p className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-muted">
-                Connected
-              </p>
-              <p className="mt-3 font-display text-[clamp(3.5rem,9vw,6.5rem)] font-semibold leading-[0.92] tracking-[-0.05em] tabular-nums">
-                <span ref={sourcesCount.ref}>
-                  {sourcesCount.value ?? sourceTotal}
-                </span>
-              </p>
-              <p className="mt-2 font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-muted">
-                sources
-              </p>
-            </div>
-          )}
-        </div>
-      </section>
+      {!github.isError && <GithubBand overview={github.data} />}
 
       {/* ---------------------------------------------------------------- */}
       {/* Closing statement.                                                */}
@@ -316,7 +312,7 @@ function HomePage() {
             Read the notes
           </Link>
           <Link className={buttonClassName("quiet")} to="/about">
-            About Dasa122
+            About me
           </Link>
         </div>
       </section>
