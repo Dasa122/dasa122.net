@@ -687,10 +687,6 @@
 
 /* --- The work rail ------------------------------------------------------- */
 
-.rail-card-cover {
-  aspect-ratio: 21 / 9;
-}
-
 .rail {
   position: relative;
 }
@@ -754,15 +750,10 @@
       will-change: transform;
     }
 
+    /* Text-sized cards: a few are visible at once, so the rail reads as a
+       horizontal strip rather than one panel per viewport. */
     .rail-card {
-      flex: 0 0 clamp(20rem, 80vw, 64rem);
-    }
-
-    /* In the rail the card is a wide landscape panel, so the cover gets a
-       viewport-relative height instead of the grid's 21:9 ratio. */
-    .rail-card-cover {
-      height: clamp(7.5rem, 18vh, 10.5rem);
-      aspect-ratio: auto;
+      flex: 0 0 min(86vw, 22rem);
     }
   }
 }

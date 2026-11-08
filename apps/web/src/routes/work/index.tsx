@@ -36,9 +36,8 @@ export const Route = createFileRoute("/work/")({
 });
 
 /**
- * The work index as a card grid: the same `ProjectCard` the home rail uses, in
- * two columns from `lg` and one below. Each card gets its cover from its
- * position, so the sequence is stable between the server and the client.
+ * The work index as a card grid: the same `ProjectCard` the home rail uses, one
+ * column on phones, two from `sm` and three from `xl`.
  */
 export function WorkIndex() {
   const projects = useQuery(projectsOptions);
@@ -72,7 +71,7 @@ export function WorkIndex() {
         )}
 
         {items.length > 0 && (
-          <div className="reveal mt-10 grid gap-5 lg:grid-cols-2">
+          <div className="reveal mt-10 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {items.map((project, index) => (
               <ProjectCard index={index} key={project.id} project={project} />
             ))}
